@@ -56,8 +56,10 @@ export async function enrich(address) {
 }
 
 // The valuation brain: band / breakeven / tier matrix. Pure and cheap —
-// re-run on every flag change.
-export function arvAgent({ subject, comps, deal, posture }) {
+// re-run on every flag change. Posture is derived HERE, at the engine door:
+// any enrich-sourced comp makes the evidence public_record; a fully
+// hand-entered set is client_input.
+export function arvAgent({ subject, comps, deal }) {
   const body = {
     subject,
     comps: comps.map((c) => ({
@@ -67,7 +69,7 @@ export function arvAgent({ subject, comps, deal, posture }) {
       renovated: c.renovated === true,
       id: c.id,
     })),
-    posture: posture || "client_input",
+    posture: comps.some((c) => c.source === "enrich") ? "public_record" : "client_input",
   };
   if (deal) body.deal = deal;
   return call("arv-agent", body);

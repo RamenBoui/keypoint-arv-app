@@ -29,7 +29,6 @@ export default function App() {
   const runArv = async (nextRun) => {
     setBusy(true);
     setError(null);
-    const posture = nextRun.comps.some((c) => c.source === "enrich") ? "public_record" : "client_input";
     const r = await arvAgent({
       subject: {
         square_feet: nextRun.subject.square_feet,
@@ -37,7 +36,6 @@ export default function App() {
       },
       comps: nextRun.comps,
       deal: nextRun.deal ?? undefined,
-      posture,
     }).catch(() => ({ ok: false, error: "network" }));
     setBusy(false);
     if (!r.ok) {
