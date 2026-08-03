@@ -12,6 +12,7 @@ import { colors, ensureFontsWeb, type } from "./src/theme";
 import AddressScreen from "./src/screens/AddressScreen";
 import CompSetScreen from "./src/screens/CompSetScreen";
 import CompareScreen from "./src/screens/CompareScreen";
+import LiveBandBar from "./src/components/LiveBandBar";
 import AnswerScreen from "./src/screens/AnswerScreen";
 
 export default function App() {
@@ -22,8 +23,41 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [lang, setLangState] = useState("en");
+  const [previewError, setPreviewError] = useState(null);
   const scroller = useRef(null);
+  const debounceRef = useRef(null);
   const t = makeT(lang);
+  const liveReady = !!(run?.subject?.square_feet && run?.comps?.length);
+
+  // Flow iteration 2 (2026-08-03): the band is a LIVE readout, not a
+  // destination. While curating, any change to testimony/sizes re-runs the
+  // engine after a 700ms lull — it is pure, free, and answers in ~190ms
+  // (stress-tested), and the contract says "re-run liberally". The strip
+  // renders the result; refusals land there verbatim.
+  useEffect(() => {
+    if (screen !== "comps" || !liveReady) return;
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      setBusy(true);
+      const r = await arvAgent({
+        subject: {
+          square_feet: run.subject.square_feet,
+          ...(run.subject.total_sf_after ? { total_sf_after: run.subject.total_sf_after } : {}),
+        },
+        comps: run.comps,
+        deal: run.deal ?? undefined,
+      }).catch(() => ({ ok: false, error: "network" }));
+      setBusy(false);
+      if (r.ok) {
+        setResult(r);
+        setPreviewError(null);
+        rememberRun(run);
+      } else {
+        setPreviewError(r.error || `arv-agent failed (${r.status})`);
+      }
+    }, 700);
+    return () => clearTimeout(debounceRef.current);
+  }, [screen, run, liveReady]);
 
   // A screen change (or a fresh error banner) always starts at the top —
   // landing mid-scroll on the Answer, or erroring above the fold, reads as
@@ -79,7 +113,14 @@ export default function App() {
     <SafeAreaView style={s.app}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.bg} />
       <View style={s.header}>
-        <Text style={type.brandLockup}>KEYPOINT · ARV</Text>
+        <View style={s.brandRow}>
+          <Text style={type.brandLockup}>KEYPOINT · ARV</Text>
+          <View style={s.crumbs}>
+            {["address", "comps", "answer"].map((st) => (
+              <View key={st} style={[s.crumb, screen === st && s.crumbOn]} />
+            ))}
+          </View>
+        </View>
         <View style={s.headerRight}>
           <View style={s.langRow}>
             {["en", "es"].map((l) => (
@@ -112,10 +153,7 @@ export default function App() {
           <CompSetScreen
             t={t}
             run={run}
-            busy={busy}
-            onChange={setRun}
-            onRunArv={(sqft, afterSf) =>
-              runArv({ ...run, subject: { ...run.subject, square_feet: sqft, total_sf_after: afterSf ?? null } })}
+            onChange={(next) => { setRun(next); }}
           />
         )}
         {screen === "answer" && run && result && (
@@ -131,6 +169,17 @@ export default function App() {
           />
         )}
       </ScrollView>
+      {screen === "comps" && run && (
+        <LiveBandBar
+          t={t}
+          result={result}
+          busy={busy}
+          error={previewError}
+          ready={liveReady}
+          testimony={`${t("testimony")} ${run.comps.filter((c) => c.closed).length} ${t("sold")} · ${run.comps.filter((c) => c.renovated).length} ${t("renovatedLower")}, ${t("of")} ${run.comps.length}`}
+          onOpen={() => { if (result?.ok) setScreen("answer"); }}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -142,6 +191,10 @@ const s = StyleSheet.create({
     backgroundColor: colors.bg,
     ...(Platform.OS === "android" ? { paddingTop: StatusBar.currentHeight } : {}),
   },
+  brandRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  crumbs: { flexDirection: "row", gap: 4 },
+  crumb: { width: 5, height: 5, borderRadius: 3, backgroundColor: colors.borderStrong },
+  crumbOn: { backgroundColor: colors.accent },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",

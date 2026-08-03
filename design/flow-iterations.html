@@ -1,0 +1,240 @@
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Keypoint ARV — Flow Iterations</title>
+<style>
+  :root {
+    --bg: #faf6ee; --card: #ffffff; --sunken: #f2ebdd;
+    --ink: #2a2622; --ink-2: #5f5951; --muted: #7a736a; --label: #8a857c;
+    --border: rgba(42,38,34,0.09); --border-strong: rgba(42,38,34,0.22);
+    --accent: #d95a1f; --green: #15803d; --amber: #a16207; --red: #b91c1c;
+    --accent-08: rgba(217,90,31,0.08); --green-12: rgba(21,128,61,0.12);
+    --amber-12: rgba(161,98,7,0.12); --red-10: rgba(185,28,28,0.10);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #211d19; --card: #2a2622; --sunken: #262220;
+      --ink: #f4efe6; --ink-2: #c9c2b6; --muted: #a49c8f; --label: #948c7f;
+      --border: rgba(244,239,230,0.10); --border-strong: rgba(244,239,230,0.26);
+      --accent: #e56a2e; --green: #4eb673; --amber: #d1a03a; --red: #e26a6a;
+      --accent-08: rgba(229,106,46,0.12); --green-12: rgba(78,182,115,0.14);
+      --amber-12: rgba(209,160,58,0.14); --red-10: rgba(226,106,106,0.14);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #211d19; --card: #2a2622; --sunken: #262220;
+    --ink: #f4efe6; --ink-2: #c9c2b6; --muted: #a49c8f; --label: #948c7f;
+    --border: rgba(244,239,230,0.10); --border-strong: rgba(244,239,230,0.26);
+    --accent: #e56a2e; --green: #4eb673; --amber: #d1a03a; --red: #e26a6a;
+    --accent-08: rgba(229,106,46,0.12); --green-12: rgba(78,182,115,0.14);
+    --amber-12: rgba(209,160,58,0.14); --red-10: rgba(226,106,106,0.14);
+  }
+  :root[data-theme="light"] {
+    --bg: #faf6ee; --card: #ffffff; --sunken: #f2ebdd;
+    --ink: #2a2622; --ink-2: #5f5951; --muted: #7a736a; --label: #8a857c;
+    --border: rgba(42,38,34,0.09); --border-strong: rgba(42,38,34,0.22);
+    --accent: #d95a1f; --green: #15803d; --amber: #a16207; --red: #b91c1c;
+    --accent-08: rgba(217,90,31,0.08); --green-12: rgba(21,128,61,0.12);
+    --amber-12: rgba(161,98,7,0.12); --red-10: rgba(185,28,28,0.10);
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--ink); margin: 0; font-family: "Hanken Grotesk", "Avenir Next", "Segoe UI", system-ui, sans-serif; font-size: 15px; line-height: 1.55; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 40px 24px 80px; }
+  .lockup { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-size: 11px; letter-spacing: 2.2px; font-weight: 700; }
+  .lockup em { color: var(--accent); font-style: normal; }
+  .brandrow { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--border-strong); padding-bottom: 14px; }
+  .datemark { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 11px; color: var(--muted); }
+  h1 { font-family: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif; font-weight: 800; font-size: clamp(28px, 4.6vw, 40px); letter-spacing: -0.03em; line-height: 1.08; margin: 32px 0 10px; text-wrap: balance; }
+  .thesis { font-size: 16.5px; color: var(--ink-2); max-width: 62ch; }
+  .thesis b { color: var(--ink); }
+
+  .iter { margin-top: 52px; border-top: 1px solid var(--border-strong); padding-top: 8px; }
+  .iter-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 4px; }
+  .iter-n { font-family: "JetBrains Mono", ui-monospace, monospace; font-weight: 700; font-size: 12px; letter-spacing: 2px; color: var(--accent); }
+  .iter-title { font-family: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif; font-weight: 700; font-size: 22px; letter-spacing: -0.02em; }
+  .verdict { margin-left: auto; font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 9.5px; letter-spacing: 1.4px; text-transform: uppercase; font-weight: 700; padding: 4px 11px; border-radius: 999px; }
+  .verdict.ship { color: var(--green); background: var(--green-12); }
+  .verdict.fold { color: var(--amber); background: var(--amber-12); }
+  .verdict.kill { color: var(--red); background: var(--red-10); }
+  .verdict.base { color: var(--muted); border: 1px solid var(--border-strong); }
+  .iter-body { display: grid; grid-template-columns: 300px 1fr; gap: 28px; align-items: start; margin-top: 14px; }
+  @media (max-width: 720px) { .iter-body { grid-template-columns: 1fr; } }
+
+  .phone { background: var(--bg); border: 1.5px solid var(--border-strong); border-radius: 18px; padding: 11px 11px 13px; }
+  .p-head { display: flex; justify-content: space-between; padding: 1px 2px 7px; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
+  .p-brand { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 7.5px; letter-spacing: 1.7px; font-weight: 700; }
+  .p-crumbs { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 7.5px; color: var(--muted); }
+  .p-crumbs b { color: var(--accent); }
+  .p-title { font-family: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif; font-weight: 800; font-size: 13px; letter-spacing: -0.02em; margin: 2px 2px 6px; }
+  .p-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 8px 9px; margin-bottom: 7px; }
+  .p-label { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 6px; letter-spacing: 1.1px; text-transform: uppercase; color: var(--label); margin-bottom: 3px; }
+  .p-spec { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 7.5px; color: var(--ink-2); }
+  .p-chip { display: inline-block; border: 1px solid var(--border-strong); border-radius: 999px; padding: 2px 7px; font-size: 8px; font-weight: 700; color: var(--ink-2); margin: 3px 3px 0 0; background: var(--card); }
+  .p-chip.on { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+  .p-btn { border-radius: 7px; padding: 8px; text-align: center; font-size: 9.5px; font-weight: 700; margin-top: 4px; }
+  .p-btn.orange { background: var(--accent); color: #faf6ee; }
+  .p-dim { opacity: 0.45; }
+  .p-gap { color: var(--muted); text-align: center; font-size: 9px; padding: 6px 0; }
+  .sticky-bar { border: 1.5px solid var(--accent); background: var(--accent-08); border-radius: 9px; padding: 7px 9px; margin-top: 8px; }
+  .sticky-bar .mini { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }
+  .sticky-bar .m { font-family: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif; font-weight: 800; font-size: 13px; }
+  .sticky-bar .m.big { font-size: 16px; }
+  .sticky-conf { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 6.5px; letter-spacing: 1px; text-transform: uppercase; color: var(--amber); margin-top: 3px; }
+  .p-scream { font-size: 8px; font-weight: 700; color: var(--red); }
+
+  .notes h3 { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--label); margin: 0 0 6px; font-weight: 700; }
+  .notes p { margin: 0 0 12px; color: var(--ink-2); max-width: 58ch; }
+  .notes b { color: var(--ink); }
+  .delta { list-style: none; padding: 0; margin: 0 0 14px; display: flex; flex-direction: column; gap: 6px; }
+  .delta li { padding-left: 18px; position: relative; color: var(--ink-2); font-size: 14px; }
+  .delta li::before { content: "→"; position: absolute; left: 0; color: var(--accent); font-weight: 700; }
+  .keeps { font-size: 13px; color: var(--muted); border-left: 2px solid var(--border-strong); padding-left: 12px; }
+  .foot { margin-top: 56px; padding-top: 14px; border-top: 1px solid var(--border-strong); font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: 1px; color: var(--muted); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+</style>
+
+<div class="wrap">
+  <div class="brandrow">
+    <div class="lockup">KEYPOINT · <em>ARV</em> — FLOW ITERATIONS</div>
+    <div class="datemark">2026-08-03 · design pass over the live app</div>
+  </div>
+
+  <h1>The answer should react to the evidence,<br/>not live a screen away from it.</h1>
+  <p class="thesis">Diagnosis from a dozen live walkthroughs: the flags drive the band, but the band is <b>two scrolls and a screen-swap away</b> from the flags. The valuation engine answers in ~190&nbsp;ms — fast enough to treat the band as a <b>live readout</b> instead of a destination. Three cumulative iterations, each judged before the next.</p>
+
+  <!-- ITERATION 0 -->
+  <div class="iter">
+    <div class="iter-head">
+      <span class="iter-n">ITERATION 0</span>
+      <span class="iter-title">Today — the destination band</span>
+      <span class="verdict base">baseline</span>
+    </div>
+    <div class="iter-body">
+      <div class="phone">
+        <div class="p-head"><span class="p-brand">KEYPOINT · ARV</span></div>
+        <div class="p-title">348 N Genesee Ave…</div>
+        <div class="p-card"><div class="p-label">Subject SF</div><div class="p-spec">5000 · adding SF?</div></div>
+        <div class="p-card"><div class="p-spec">337 N Spaulding · $2.20M</div><span class="p-chip on">✓ Sold</span><span class="p-chip on">✓ Renovated</span></div>
+        <div class="p-card p-dim"><div class="p-spec">358 N Ogden · $1.75M</div><span class="p-chip">Sold</span><span class="p-chip">Renovated</span></div>
+        <div class="p-gap">· · · five more cards · · ·</div>
+        <div class="p-btn orange">Get the band</div>
+        <div class="p-gap">tap → whole screen swaps to the Answer</div>
+      </div>
+      <div class="notes">
+        <h3>What's rough</h3>
+        <ul class="delta">
+          <li>The one action lives <b>below seven cards</b> — every run is a scroll hunt (partially patched with scroll-reset, but the reach remains).</li>
+          <li>Flag → result feedback loop is <b>broken by a screen swap</b>: flip a flag, scroll down, tap, read, tap back, scroll up.</li>
+          <li>Confidence — the product's soul — is <b>invisible while curating</b>, exactly when it should be teaching.</li>
+        </ul>
+        <p class="keeps">What's already right and untouchable: testimony is explicit taps, engine words verbatim, orange = one action, no client math.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ITERATION 1 -->
+  <div class="iter">
+    <div class="iter-head">
+      <span class="iter-n">ITERATION 1</span>
+      <span class="iter-title">Pin the action — sticky band bar</span>
+      <span class="verdict fold">folded into 2</span>
+    </div>
+    <div class="iter-body">
+      <div class="phone">
+        <div class="p-head"><span class="p-brand">KEYPOINT · ARV</span></div>
+        <div class="p-title">348 N Genesee Ave…</div>
+        <div class="p-card p-dim"><div class="p-spec">337 N Spaulding · $2.20M</div><span class="p-chip on">✓ Sold</span><span class="p-chip on">✓ Renovated</span></div>
+        <div class="p-card p-dim"><div class="p-spec">358 N Ogden · $1.75M</div><span class="p-chip on">✓ Sold</span><span class="p-chip">Renovated</span></div>
+        <div class="p-gap">scrolls under the bar ↓</div>
+        <div class="sticky-bar">
+          <div class="p-btn orange" style="margin-top:0">Get the band</div>
+          <div class="sticky-conf">YOUR TESTIMONY: 2 SOLD · 1 RENOVATED, OF 7</div>
+        </div>
+      </div>
+      <div class="notes">
+        <h3>The move</h3>
+        <ul class="delta">
+          <li>The Field app's <b>StickyFooter pattern</b>: the action + testimony caption pin to the viewport bottom; cards scroll underneath.</li>
+          <li>Zero reach — the run is always one thumb-tap away, from any scroll position.</li>
+        </ul>
+        <h3>Judgment</h3>
+        <p>Necessary but not sufficient — it shortens the trip to the answer without fixing that the answer is a <b>trip</b> at all. Folded into iteration 2 as its chassis.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ITERATION 2 -->
+  <div class="iter">
+    <div class="iter-head">
+      <span class="iter-n">ITERATION 2</span>
+      <span class="iter-title">The live band — curation with a pulse</span>
+      <span class="verdict ship">shipped</span>
+    </div>
+    <div class="iter-body">
+      <div class="phone">
+        <div class="p-head"><span class="p-brand">KEYPOINT · ARV</span><span class="p-crumbs">● <b>●</b> ●</span></div>
+        <div class="p-title">348 N Genesee Ave…</div>
+        <div class="p-card p-dim"><div class="p-spec">337 N Spaulding · $2.20M</div><span class="p-chip on">✓ Sold</span><span class="p-chip on">✓ Renovated</span></div>
+        <div class="p-card"><div class="p-spec">358 N Ogden · $1.75M</div><span class="p-chip on">✓ Sold</span><span class="p-chip">Renovated</span> <span class="p-spec" style="color:var(--accent)">← just tapped</span></div>
+        <div class="p-gap">…band re-runs itself, 190 ms later…</div>
+        <div class="sticky-bar">
+          <div class="mini">
+            <span class="m" style="color:var(--ink-2)">$1.84M</span>
+            <span class="m big">$2.12M</span>
+            <span class="m" style="color:var(--ink-2)">$2.17M</span>
+          </div>
+          <div class="sticky-conf">CONFIDENCE: MEDIUM · 7 COMPS — SEE THE FULL ANSWER ▸</div>
+        </div>
+      </div>
+      <div class="notes">
+        <h3>The move</h3>
+        <ul class="delta">
+          <li>Once subject SF + one comp exist, the app <b>runs the band itself</b> — debounced ~700&nbsp;ms after the last change. The engine is pure, free, and answers in 190&nbsp;ms p50 (stress-tested); the contract literally says "re-run liberally."</li>
+          <li>The sticky bar becomes a <b>live P20 · P50 · P80 readout with the confidence word</b>. Flip a flag → watch confidence move. The honesty stops being a screen you visit and becomes physics you feel.</li>
+          <li>The engine's refusals surface in the same bar, verbatim ("widen the set, not the band") — errors land where your thumb is, not above the fold.</li>
+          <li>The bar's one tap → the full Answer (breakeven, tiers, gap, tabs, PDF) — now an <b>expansion</b>, not a leap of faith.</li>
+        </ul>
+        <h3>Rules check</h3>
+        <p>The app still computes nothing — it just asks more often. Never one number: the strip is always the triple + confidence. Testimony still requires deliberate taps; the band reacting to them <b>rewards</b> testimony rather than replacing it.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ITERATION 3 -->
+  <div class="iter">
+    <div class="iter-head">
+      <span class="iter-n">ITERATION 3</span>
+      <span class="iter-title">Answer-first inversion — band before flags</span>
+      <span class="verdict kill">rejected</span>
+    </div>
+    <div class="iter-body">
+      <div class="phone">
+        <div class="p-head"><span class="p-brand">KEYPOINT · ARV</span></div>
+        <div class="p-title">348 N Genesee Ave…</div>
+        <div class="sticky-bar" style="margin-top:2px">
+          <div class="mini">
+            <span class="m" style="color:var(--ink-2)">$1.97M</span>
+            <span class="m big">$2.12M</span>
+            <span class="m" style="color:var(--ink-2)">$2.27M</span>
+          </div>
+          <div class="p-scream" style="margin-top:3px">NONE SOLD — do not base an ARV on this comp set.</div>
+        </div>
+        <div class="p-gap">band shown instantly, before any testimony</div>
+        <div class="p-card p-dim"><div class="p-spec">337 N Spaulding · $2.20M</div><span class="p-chip">Sold</span><span class="p-chip">Renovated</span></div>
+        <div class="p-btn orange p-dim">Improve confidence: flag your comps</div>
+      </div>
+      <div class="notes">
+        <h3>The move (and why it dies)</h3>
+        <ul class="delta">
+          <li>Skip Curate: run the band on raw unflagged candidates the moment enrichment lands, then ask for flags to "improve" it.</li>
+          <li><b>Faster to <i>a</i> number — but the wrong ceremony.</b> The first thing every user would see is the NONE-SOLD scream on data they haven't touched, teaching them the app yells before they've done anything.</li>
+          <li>Worse: people anchor on the first number they see. Showing a band built on evidence nobody attested to <b>optimizes for the anchor over the testimony</b> — the exact inversion of what makes this product defensible.</li>
+        </ul>
+        <h3>Judgment</h3>
+        <p>Rejected. Iteration 2 already gives the speed (the band appears seconds after landing on Curate if the sqft came from enrichment) without ever showing a number ahead of the user's own attestation… because the auto-run still waits for <b>ready</b>, and unflagged runs honestly carry their low confidence in the strip.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <span>SHIPPED = ITERATION 2 ON ITERATION 1'S CHASSIS + BREADCRUMB DOTS</span>
+    <span>companion: design/ui-flow.html · repo RamenBoui/keypoint-arv-app</span>
+  </div>
+</div>

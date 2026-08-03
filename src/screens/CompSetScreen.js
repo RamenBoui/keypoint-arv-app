@@ -5,7 +5,7 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { numOrNull, fmtMoneyFull, fmtInt } from "../util";
-import { Card, Divider, Field, FlagChip, GhostButton, GroupLabel, Pill, PrimaryButton } from "../components/ui";
+import { Card, Field, FlagChip, GhostButton, GroupLabel, Pill, PrimaryButton } from "../components/ui";
 import PermitsInline from "../components/PermitsInline";
 import { colors, type } from "../theme";
 
@@ -38,7 +38,7 @@ function CompCard({ t, comp, fallbackCity, onToggle, onRemove }) {
   );
 }
 
-export default function CompSetScreen({ t, run, onChange, onRunArv, busy }) {
+export default function CompSetScreen({ t, run, onChange }) {
   const { subject, comps, enriched } = run;
   const [adding, setAdding] = useState(false);
   const [addr, setAddr] = useState("");
@@ -89,17 +89,22 @@ export default function CompSetScreen({ t, run, onChange, onRunArv, busy }) {
             <Field
               label={t("subjectSf")}
               value={subjectSqft}
-              onChangeText={(v) => { setSubjectSqft(v); }}
+              onChangeText={(v) => {
+                setSubjectSqft(v);
+                onChange({ ...run, subject: { ...run.subject, square_feet: numOrNull(v) } });
+              }}
               placeholder="1800"
               keyboardType="numeric"
-              onSubmitEditing={() => { if (ready && !busy) onRunArv(sqftValue, numOrNull(afterSqft)); }}
             />
           </View>
           <View style={{ flex: 1 }}>
             <Field
               label={t("sizeOnceBuilt")}
               value={afterSqft}
-              onChangeText={setAfterSqft}
+              onChangeText={(v) => {
+                setAfterSqft(v);
+                onChange({ ...run, subject: { ...run.subject, total_sf_after: numOrNull(v) } });
+              }}
               placeholder={t("sizePlaceholder")}
               keyboardType="numeric"
             />
@@ -150,18 +155,11 @@ export default function CompSetScreen({ t, run, onChange, onRunArv, busy }) {
         </Pressable>
       )}
 
-      <Divider />
-      <PrimaryButton
-        title={busy ? t("runningModel") : t("getTheBand")}
-        onPress={() => onRunArv(sqftValue, numOrNull(afterSqft))}
-        disabled={!ready || busy}
-        tone="accent"
-      />
-      <Text style={[type.spec, s.hint]}>
-        {ready
-          ? `${t("testimony")} ${comps.filter((c) => c.closed).length} ${t("sold")} · ${comps.filter((c) => c.renovated).length} ${t("renovatedLower")}, ${t("of")} ${comps.length}`
-          : sqftValue ? t("needOneComp") : t("needSubjectSf")}
-      </Text>
+      {!ready && (
+        <Text style={[type.spec, s.hint]}>
+          {sqftValue ? t("needOneComp") : t("needSubjectSf")}
+        </Text>
+      )}
     </View>
   );
 }
