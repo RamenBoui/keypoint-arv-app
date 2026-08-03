@@ -1,0 +1,413 @@
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Keypoint ARV — UI Flow</title>
+<style>
+  :root {
+    --bg: #faf6ee; --card: #ffffff; --sunken: #f2ebdd;
+    --ink: #2a2622; --ink-2: #5f5951; --muted: #7a736a; --label: #8a857c;
+    --border: rgba(42,38,34,0.09); --border-strong: rgba(42,38,34,0.22);
+    --accent: #d95a1f; --green: #15803d; --amber: #a16207; --red: #b91c1c;
+    --accent-08: rgba(217,90,31,0.08); --green-12: rgba(21,128,61,0.12);
+    --amber-12: rgba(161,98,7,0.12); --red-10: rgba(185,28,28,0.10);
+    --phone-bg: #faf6ee; --phone-card: #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #211d19; --card: #2a2622; --sunken: #262220;
+      --ink: #f4efe6; --ink-2: #c9c2b6; --muted: #a49c8f; --label: #948c7f;
+      --border: rgba(244,239,230,0.10); --border-strong: rgba(244,239,230,0.26);
+      --accent: #e56a2e; --green: #4eb673; --amber: #d1a03a; --red: #e26a6a;
+      --accent-08: rgba(229,106,46,0.12); --green-12: rgba(78,182,115,0.14);
+      --amber-12: rgba(209,160,58,0.14); --red-10: rgba(226,106,106,0.14);
+      --phone-bg: #26221d; --phone-card: #2e2a25;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #211d19; --card: #2a2622; --sunken: #262220;
+    --ink: #f4efe6; --ink-2: #c9c2b6; --muted: #a49c8f; --label: #948c7f;
+    --border: rgba(244,239,230,0.10); --border-strong: rgba(244,239,230,0.26);
+    --accent: #e56a2e; --green: #4eb673; --amber: #d1a03a; --red: #e26a6a;
+    --accent-08: rgba(229,106,46,0.12); --green-12: rgba(78,182,115,0.14);
+    --amber-12: rgba(209,160,58,0.14); --red-10: rgba(226,106,106,0.14);
+    --phone-bg: #26221d; --phone-card: #2e2a25;
+  }
+  :root[data-theme="light"] {
+    --bg: #faf6ee; --card: #ffffff; --sunken: #f2ebdd;
+    --ink: #2a2622; --ink-2: #5f5951; --muted: #7a736a; --label: #8a857c;
+    --border: rgba(42,38,34,0.09); --border-strong: rgba(42,38,34,0.22);
+    --accent: #d95a1f; --green: #15803d; --amber: #a16207; --red: #b91c1c;
+    --accent-08: rgba(217,90,31,0.08); --green-12: rgba(21,128,61,0.12);
+    --amber-12: rgba(161,98,7,0.12); --red-10: rgba(185,28,28,0.10);
+    --phone-bg: #faf6ee; --phone-card: #ffffff;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--ink); margin: 0;
+    font-family: "Hanken Grotesk", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+    font-size: 15px; line-height: 1.55;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 40px 24px 80px; }
+  .display { font-family: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif; }
+  .mono { font-family: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace; }
+
+  .brandrow { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--border-strong); padding-bottom: 14px; }
+  .lockup { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-size: 11px; letter-spacing: 2.2px; font-weight: 700; }
+  .lockup em { color: var(--accent); font-style: normal; }
+  .datemark { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-size: 11px; letter-spacing: 1px; color: var(--muted); }
+
+  h1 { font-family: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif; font-weight: 800; font-size: clamp(30px, 5vw, 44px); letter-spacing: -0.03em; line-height: 1.05; margin: 34px 0 10px; text-wrap: balance; }
+  .thesis { font-size: 17px; color: var(--ink-2); max-width: 58ch; margin: 0 0 8px; }
+  .thesis b { color: var(--ink); }
+
+  .legend { display: flex; gap: 18px; margin: 22px 0 0; flex-wrap: wrap; }
+  .leg { display: flex; align-items: center; gap: 7px; font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10.5px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); }
+  .dot { width: 9px; height: 9px; border-radius: 50%; }
+  .dot.built { background: var(--green); } .dot.next { background: var(--accent); } .dot.later { border: 1.5px solid var(--border-strong); }
+
+  h2 { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--label); margin: 56px 0 6px; display: flex; align-items: center; gap: 10px; }
+  h2::after { content: ""; flex: 1; height: 1px; background: var(--border-strong); }
+  .h2sub { color: var(--ink-2); max-width: 68ch; margin: 0 0 22px; }
+
+  /* ---- flow rail ---- */
+  .rail-scroll { overflow-x: auto; padding-bottom: 10px; }
+  .rail { display: flex; align-items: stretch; gap: 0; min-width: 900px; }
+  .node { background: var(--card); border: 1px solid var(--border-strong); border-radius: 10px; padding: 12px 14px; min-width: 148px; flex: 1; position: relative; }
+  .node .k { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 9.5px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--label); display: flex; align-items: center; gap: 6px; }
+  .node .t { font-family: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif; font-weight: 700; font-size: 15.5px; letter-spacing: -0.01em; margin-top: 3px; }
+  .node .d { font-size: 12.5px; color: var(--muted); margin-top: 3px; line-height: 1.4; }
+  .joint { display: flex; align-items: center; padding: 0 4px; color: var(--border-strong); flex: 0 0 auto; }
+  .joint svg { display: block; }
+  .branches { display: flex; gap: 14px; margin-top: 14px; flex-wrap: wrap; }
+  .branch { border: 1px dashed var(--border-strong); border-radius: 10px; padding: 10px 14px; font-size: 13px; color: var(--ink-2); background: transparent; flex: 1; min-width: 240px; }
+  .branch .from { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 9.5px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--accent); display: block; margin-bottom: 3px; }
+
+  /* ---- screens ---- */
+  .screens { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 26px; }
+  .screen { display: flex; flex-direction: column; gap: 12px; }
+  .phone { background: var(--phone-bg); border: 1.5px solid var(--border-strong); border-radius: 18px; padding: 12px 12px 16px; box-shadow: none; }
+  .p-head { display: flex; justify-content: space-between; align-items: baseline; padding: 2px 2px 8px; border-bottom: 1px solid var(--border); margin-bottom: 10px; }
+  .p-brand { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 8px; letter-spacing: 1.8px; font-weight: 700; }
+  .p-date { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 7.5px; color: var(--muted); }
+  .p-title { font-family: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif; font-weight: 800; font-size: 15px; letter-spacing: -0.02em; margin: 2px 2px 6px; }
+  .p-card { background: var(--phone-card); border: 1px solid var(--border); border-radius: 9px; padding: 9px 10px; margin-bottom: 8px; }
+  .p-label { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 6.5px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--label); margin-bottom: 4px; }
+  .p-field { border: 1px solid var(--border-strong); border-radius: 6px; padding: 7px 8px; font-size: 10.5px; color: var(--muted); margin-bottom: 6px; background: var(--phone-card); }
+  .p-field.filled { color: var(--ink); font-weight: 600; }
+  .p-btn { border-radius: 8px; padding: 9px; text-align: center; font-size: 11px; font-weight: 700; }
+  .p-btn.ink { background: var(--ink); color: var(--bg); }
+  .p-btn.orange { background: var(--accent); color: #faf6ee; }
+  .p-btn.ghost { color: var(--ink-2); font-weight: 600; }
+  .p-spec { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 8.5px; color: var(--ink-2); }
+  .p-chip { display: inline-block; border: 1px solid var(--border-strong); border-radius: 999px; padding: 3px 9px; font-size: 9px; font-weight: 700; color: var(--ink-2); margin: 3px 4px 0 0; background: var(--phone-card); }
+  .p-chip.on { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+  .p-link { color: var(--accent); font-size: 9.5px; font-weight: 700; margin-top: 5px; }
+  .p-band { display: flex; align-items: flex-end; justify-content: space-between; gap: 6px; text-align: center; }
+  .p-band .cell { flex: 1; }
+  .p-band .lb { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 6px; letter-spacing: 1px; text-transform: uppercase; color: var(--label); }
+  .p-band .m { font-family: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif; font-weight: 800; font-size: 13px; color: var(--ink-2); }
+  .p-band .mid .m { font-size: 19px; color: var(--ink); letter-spacing: -0.02em; }
+  .p-pill { display: inline-block; border-radius: 999px; padding: 2px 8px; font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 7px; letter-spacing: 1px; text-transform: uppercase; font-weight: 700; }
+  .p-pill.med { background: var(--amber-12); color: var(--amber); }
+  .p-row { display: flex; justify-content: space-between; gap: 8px; font-size: 9.5px; padding: 4px 0; border-bottom: 1px solid var(--border); }
+  .p-row:last-child { border-bottom: 0; }
+  .p-row .code { font-family: "JetBrains Mono", ui-monospace, monospace; color: var(--accent); font-weight: 700; }
+  .p-row .amt { font-family: "JetBrains Mono", ui-monospace, monospace; font-weight: 600; }
+  .p-tabs { display: flex; gap: 4px; margin-bottom: 8px; }
+  .p-tab { flex: 1; text-align: center; font-size: 8.5px; font-weight: 700; padding: 6px 2px; border-radius: 7px; border: 1px solid var(--border-strong); color: var(--ink-2); }
+  .p-tab.on { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+  .p-verdict { font-size: 9px; font-weight: 700; color: var(--green); margin-top: 5px; }
+  .p-scream { font-size: 9px; font-weight: 700; color: var(--red); }
+  .p-becells { display: flex; gap: 5px; }
+  .p-becell { flex: 1; background: var(--sunken); border-radius: 6px; padding: 6px 4px; text-align: center; }
+  .p-becell .m { font-family: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif; font-weight: 800; font-size: 11px; }
+
+  .s-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .s-name { font-family: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif; font-weight: 700; font-size: 17px; letter-spacing: -0.01em; }
+  .status { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 9px; letter-spacing: 1.2px; text-transform: uppercase; font-weight: 700; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+  .status.built { color: var(--green); background: var(--green-12); }
+  .status.next { color: var(--accent); background: var(--accent-08); }
+  .status.later { color: var(--muted); border: 1px solid var(--border-strong); }
+  .ann { margin: 0; padding: 0 0 0 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .ann li { font-size: 13.5px; color: var(--ink-2); padding-left: 16px; position: relative; }
+  .ann li::before { content: "—"; position: absolute; left: 0; color: var(--accent); }
+  .ann b { color: var(--ink); font-weight: 600; }
+
+  /* honesty states */
+  .states { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+  .state { border-radius: 10px; padding: 14px 16px; border: 1px solid var(--border); background: var(--card); }
+  .state .when { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 9px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--label); margin-bottom: 6px; }
+  .state .copy { font-size: 13.5px; font-weight: 600; line-height: 1.45; }
+  .state.red { background: var(--red-10); } .state.red .copy { color: var(--red); }
+  .state.amber { background: var(--amber-12); } .state.amber .copy { color: var(--amber); }
+  .state .why { font-size: 12.5px; color: var(--muted); margin-top: 6px; font-weight: 400; }
+
+  table.rules { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  table.rules th { text-align: left; font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 9.5px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--label); font-weight: 700; padding: 8px 10px; border-bottom: 1px solid var(--border-strong); }
+  table.rules td { padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: top; color: var(--ink-2); }
+  table.rules td:first-child { color: var(--ink); font-weight: 600; width: 42%; }
+  .rules-scroll { overflow-x: auto; }
+
+  .order { display: flex; flex-direction: column; gap: 10px; counter-reset: step; }
+  .step { display: flex; gap: 14px; align-items: baseline; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; }
+  .step .n { font-family: "JetBrains Mono", ui-monospace, monospace; font-weight: 700; font-size: 11px; color: var(--accent); min-width: 44px; }
+  .step .what b { display: block; font-weight: 700; }
+  .step .what span { color: var(--muted); font-size: 13.5px; }
+
+  .foot { margin-top: 56px; padding-top: 14px; border-top: 1px solid var(--border-strong); display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: 1px; color: var(--muted); }
+</style>
+
+<div class="wrap">
+  <div class="brandrow">
+    <div class="lockup">KEYPOINT · <em>ARV</em> — UI FLOW</div>
+    <div class="datemark">2026-08-03 · repo @ 9cd7051</div>
+  </div>
+
+  <h1 class="display">Address in.<br/>Defensible band out.</h1>
+  <p class="thesis">One question — <b>what will it be worth once the work is done</b> — answered in under a minute, with every number one tap from its evidence. The app computes nothing: engines decide, screens render. Absolute MaxBid never appears; the bid gap is shown only as breakeven distance.</p>
+
+  <div class="legend">
+    <span class="leg"><span class="dot built"></span> Built &amp; browser-verified</span>
+    <span class="leg"><span class="dot next"></span> Next up</span>
+    <span class="leg"><span class="dot later"></span> Planned</span>
+  </div>
+
+  <h2>The spine — five beats, one direction</h2>
+  <p class="h2sub">A straight rail. No drawer, no tab bar at the root — the flow <em>is</em> the navigation, and Back always means "one beat left."</p>
+  <div class="rail-scroll"><div class="rail">
+    <div class="node"><span class="k"><span class="dot next"></span>Gate</span><div class="t display">Sign in</div><div class="d">Team sign-in, once. Gates the paid calls.</div></div>
+    <div class="joint"><svg width="18" height="12" viewBox="0 0 18 12" fill="none"><path d="M0 6h14m0 0-4-4m4 4-4 4" stroke="currentColor" stroke-width="1.5"/></svg></div>
+    <div class="node"><span class="k"><span class="dot built"></span>Beat 1</span><div class="t display">Address</div><div class="d">Type it. Enrich fills facts + candidate comps. Recents beneath.</div></div>
+    <div class="joint"><svg width="18" height="12" viewBox="0 0 18 12" fill="none"><path d="M0 6h14m0 0-4-4m4 4-4 4" stroke="currentColor" stroke-width="1.5"/></svg></div>
+    <div class="node"><span class="k"><span class="dot built"></span>Beat 2</span><div class="t display">Curate</div><div class="d">The heart. Flag each comp sold / renovated — user testimony the model runs on.</div></div>
+    <div class="joint"><svg width="18" height="12" viewBox="0 0 18 12" fill="none"><path d="M0 6h14m0 0-4-4m4 4-4 4" stroke="currentColor" stroke-width="1.5"/></svg></div>
+    <div class="node"><span class="k"><span class="dot built"></span>Beat 3</span><div class="t display">The Answer</div><div class="d">Band · breakeven · tier matrix. Never one number.</div></div>
+    <div class="joint"><svg width="18" height="12" viewBox="0 0 18 12" fill="none"><path d="M0 6h14m0 0-4-4m4 4-4 4" stroke="currentColor" stroke-width="1.5"/></svg></div>
+    <div class="node"><span class="k"><span class="dot built"></span>Beat 4</span><div class="t display">Share</div><div class="d">One-page PDF — the defense, not just the number.</div></div>
+  </div></div>
+  <div class="branches">
+    <div class="branch"><span class="from">Beat 1 · enrich blank or quota</span>Manual path: type subject SF and comps by hand. The band must still render — degraded data is a posture, not a dead end.</div>
+    <div class="branch"><span class="from">Beat 2 · any card, one tap</span>Evidence drill-downs open <em>in place</em>: live permit record now; comp study (what THEY did for the price) planned.</div>
+    <div class="branch"><span class="from">Beat 3 · context tabs</span>Market scope · Permit trends · Stuck-listing diagnostic — the "why is the band what it is" layer.</div>
+  </div>
+
+  <h2>The screens</h2>
+  <p class="h2sub">Mocked in the app's own system — cream ground, flat hairline cards, ink for actions, orange reserved for the one action, the unresolved, and wayfinding. Real data from today's verified run.</p>
+
+  <div class="screens">
+
+    <div class="screen">
+      <div class="s-head"><span class="s-name">Sign in</span><span class="status next">next · AV-01</span></div>
+      <div class="phone">
+        <div class="p-head"><span class="p-brand">KEYPOINT · ARV</span><span class="p-date">2026-08-03</span></div>
+        <div class="p-title">Your team code</div>
+        <div class="p-card">
+          <div class="p-label">Team code</div>
+          <div class="p-field">KP-XXXX</div>
+          <div class="p-label">Your phone</div>
+          <div class="p-field">(626) 555-0140</div>
+          <div class="p-btn ink">Send code</div>
+        </div>
+        <div class="p-spec" style="text-align:center">One-time · stays signed in on this device</div>
+      </div>
+      <ul class="ann">
+        <li><b>Once, then invisible.</b> Local-first session, same pattern as Field.</li>
+        <li>Gates the paid calls (enrich, vision modes) per function policy.</li>
+        <li><b>Open question for Raymond/Jeffrey:</b> reuse Field's gc-account/OTP spine, or a simpler allow-list for the pilot?</li>
+      </ul>
+    </div>
+
+    <div class="screen">
+      <div class="s-head"><span class="s-name">Address</span><span class="status built">built</span></div>
+      <div class="phone">
+        <div class="p-head"><span class="p-brand">KEYPOINT · ARV</span><span class="p-date">2026-08-03</span></div>
+        <div class="p-title">What will it be worth?</div>
+        <div class="p-card">
+          <div class="p-label">Property address</div>
+          <div class="p-field filled">348 N Genesee Ave, Los Angeles, CA</div>
+          <div class="p-btn ink">Find comps</div>
+        </div>
+        <div class="p-label" style="margin:6px 2px 2px">Recent</div>
+        <div class="p-row"><span>1257 Inspiration Point, West Covina</span><span class="p-spec">08-01</span></div>
+        <div class="p-row"><span>2825 Majestic St, West Covina</span><span class="p-spec">07-29</span></div>
+      </div>
+      <ul class="ann">
+        <li>One field, one button. Recents restore the <b>whole run</b> — flags included.</li>
+        <li>Enrich failure drops to manual entry without breaking stride.</li>
+      </ul>
+    </div>
+
+    <div class="screen">
+      <div class="s-head"><span class="s-name">Curate — the heart</span><span class="status built">built</span></div>
+      <div class="phone">
+        <div class="p-head"><span class="p-brand">KEYPOINT · ARV</span><span class="p-date">2026-08-03</span></div>
+        <div class="p-title">348 N Genesee Ave…</div>
+        <div class="p-card">
+          <div style="display:flex; gap:6px">
+            <div style="flex:1"><div class="p-label">Subject SF</div><div class="p-field filled">5000</div></div>
+            <div style="flex:1"><div class="p-label">Once built</div><div class="p-field">adding SF?</div></div>
+          </div>
+          <div class="p-spec" style="margin-top:2px">LOS_ANGELES_CA · LIVE RECORD · 1 PERMIT<br/>2026-07-24 · Re-roof · $11,700</div>
+        </div>
+        <div class="p-card">
+          <div style="font-size:10px; font-weight:700">337 N Spaulding Ave</div>
+          <div class="p-spec">$2,200,000 · 5,148 SF · 2026-03 · 0.04 mi</div>
+          <span class="p-chip on">✓ Sold (closed)</span><span class="p-chip on">✓ Renovated</span>
+          <div class="p-link">Permit history ▸</div>
+        </div>
+        <div class="p-card">
+          <div style="font-size:10px; font-weight:700">358 N Ogden Dr</div>
+          <div class="p-spec">$1,750,000 · 5,486 SF · 2026-03</div>
+          <span class="p-chip on">✓ Sold (closed)</span><span class="p-chip">Renovated</span>
+          <div class="p-link">Permit history ▸ &nbsp; Comp study ▸</div>
+        </div>
+        <div class="p-btn orange">Get the band</div>
+      </div>
+      <ul class="ann">
+        <li><b>Flags are testimony, not data.</b> RentCast can't know closed/renovated — the user says so, and the evidence grade follows.</li>
+        <li>Permit history opens inline on any card — live public record, honest "city not covered" when it is.</li>
+        <li><b>Comp study ▸</b> (planned, AV-11) — what THIS sold comp did for its price, photos + permits.</li>
+        <li>Orange button = the one action on this screen.</li>
+      </ul>
+    </div>
+
+    <div class="screen">
+      <div class="s-head"><span class="s-name">The Answer</span><span class="status built">built</span></div>
+      <div class="phone">
+        <div class="p-head"><span class="p-brand">KEYPOINT · ARV</span><span class="p-date">2026-08-03</span></div>
+        <div class="p-card">
+          <div class="p-label">ARV band</div>
+          <div class="p-band">
+            <div class="cell"><div class="lb">P20 · stress</div><div class="m">$1.82M</div></div>
+            <div class="cell mid"><div class="lb">P50 · working</div><div class="m">$2.15M</div></div>
+            <div class="cell"><div class="lb">P80 · upside</div><div class="m">$2.48M</div></div>
+          </div>
+          <div style="margin-top:6px"><span class="p-pill med">Confidence: medium</span> <span class="p-spec">3 comps used</span></div>
+          <div class="p-spec" style="margin-top:4px">$/SF median of 3 SOLD comps… anchored at the set's mean 5,156 sf</div>
+        </div>
+        <div class="p-card">
+          <div class="p-label">Breakeven vs the deal</div>
+          <div class="p-becells">
+            <div class="p-becell"><div class="lb p-label">Breakeven</div><div class="m">$420/SF</div></div>
+            <div class="p-becell"><div class="lb p-label">Red line</div><div class="m">$468/SF</div></div>
+            <div class="p-becell"><div class="lb p-label">Cushion</div><div class="m">+2.4%</div></div>
+          </div>
+          <div class="p-verdict">P50 exit clears breakeven — cushion visible</div>
+        </div>
+        <div class="p-card">
+          <div class="p-label">ARV per scope tier</div>
+          <div class="p-row"><span class="code">S1</span><span style="flex:1">Cosmetic</span><span class="amt">$1.93M</span></div>
+          <div class="p-row"><span class="code">S3</span><span style="flex:1">Structural remodel</span><span class="amt">$2.32M</span></div>
+          <div class="p-row"><span class="code">S6</span><span style="flex:1">Teardown</span><span class="amt">$2.26M</span></div>
+        </div>
+        <div class="p-btn ink">Share as PDF</div>
+      </div>
+      <ul class="ann">
+        <li><b>Three locked outputs, never one number.</b> P50 leads; confidence and basis note render verbatim — the honesty is the product.</li>
+        <li>Deal numbers are optional and in-place editable; the verdict line is the engine's own sentence.</li>
+        <li>Bid gap = breakeven distance. <b>No MaxBid field exists in this app's contract.</b></li>
+      </ul>
+    </div>
+
+    <div class="screen">
+      <div class="s-head"><span class="s-name">Context tabs</span><span class="status later">planned · AV-12/14/15</span></div>
+      <div class="phone">
+        <div class="p-head"><span class="p-brand">KEYPOINT · ARV</span><span class="p-date">2026-08-03</span></div>
+        <div class="p-tabs"><div class="p-tab on">Market</div><div class="p-tab">Trends</div><div class="p-tab">Stuck?</div></div>
+        <div class="p-card">
+          <div class="p-label">Market scope · this price point</div>
+          <div style="font-size:10px; font-weight:700; line-height:1.4">The market already delivers S2 work at designer finish here.</div>
+          <div class="p-spec" style="margin-top:4px">Table stakes (≥60% of sold set):</div>
+          <span class="p-chip on">kitchen</span><span class="p-chip on">baths</span><span class="p-chip on">flooring</span>
+          <div class="p-spec" style="margin-top:4px">Differentiators: <span style="color:var(--accent)">ADU · primary suite</span></div>
+        </div>
+        <div class="p-card">
+          <div class="p-label">Permit trends · 90036 · 12 mo</div>
+          <div class="p-row"><span>roof</span><span class="amt">28% · rising</span></div>
+          <div class="p-row"><span>addition</span><span class="amt">15% · flat</span></div>
+          <div class="p-row"><span>adu</span><span class="amt">11% · flat</span></div>
+        </div>
+      </div>
+      <ul class="ann">
+        <li>Tabs off the Answer — the "why is the band what it is" layer, one level deep, never a root nav.</li>
+        <li><b>Market</b> = table stakes vs differentiators from the sold set. <b>Trends</b> = what the area is permitting (no MLS). <b>Stuck?</b> = listing diagnostic, realtor persona.</li>
+        <li>Every number arrives with its comp/permit count — the engines refuse fake precision, the UI shows the refusal.</li>
+      </ul>
+    </div>
+
+    <div class="screen">
+      <div class="s-head"><span class="s-name">The PDF</span><span class="status built">built</span></div>
+      <div class="phone" style="background:var(--phone-card)">
+        <div style="border:1px solid var(--border); border-radius:6px; padding:10px; background:#fff; color:#2a2622">
+          <div class="p-brand" style="color:#2a2622">KEYPOINT · ARV</div>
+          <div style="font-family:'Bricolage Grotesque','Avenir Next',system-ui,sans-serif; font-weight:800; font-size:12px; margin-top:2px">348 N Genesee Ave, Los Angeles, CA</div>
+          <div class="p-band" style="margin-top:8px">
+            <div class="cell"><div class="lb" style="color:#8a857c">P20</div><div class="m" style="color:#5f5951">$1.82M</div></div>
+            <div class="cell mid"><div class="lb" style="color:#8a857c">P50</div><div class="m" style="color:#2a2622">$2.15M</div></div>
+            <div class="cell"><div class="lb" style="color:#8a857c">P80</div><div class="m" style="color:#5f5951">$2.48M</div></div>
+          </div>
+          <div style="font-size:7.5px; color:#5f5951; margin-top:6px; border-top:1px solid rgba(42,38,34,.15); padding-top:5px">
+            Comparable sales — the evidence<br/>
+            <span style="font-family:ui-monospace,monospace">337 N Spaulding · $2.20M · 5,148 SF · ✓sold ✓renovated</span><br/>
+            <span style="font-family:ui-monospace,monospace">358 N Ogden&nbsp;&nbsp;&nbsp;&nbsp; · $1.75M · 5,486 SF · ✓sold —</span>
+          </div>
+          <div style="font-size:6.5px; color:#7a736a; margin-top:6px">Valuation is a function of scope — never a single number.</div>
+        </div>
+      </div>
+      <ul class="ann">
+        <li>The deliverable is the <b>defense</b>: band, breakeven verdict, tier matrix, and the comp table with the preparer's testimony visible.</li>
+        <li>Web: print dialog (Save as PDF). Native: expo-print → share sheet.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>Honesty states — designed, not handled</h2>
+  <p class="h2sub">The engines refuse to fake precision; the UI treats each refusal as a first-class screen state with the engine's own words. These are features, not error handling.</p>
+  <div class="states">
+    <div class="state red">
+      <div class="when">Comp set has no closed sales</div>
+      <div class="copy">NONE SOLD — do not base an ARV on this comp set.</div>
+      <div class="why">Confidence can never rise above "low" without closed sales. The scream renders on the band card itself.</div>
+    </div>
+    <div class="state red">
+      <div class="when">Subject outside the comp size band</div>
+      <div class="copy">Every comp fell outside the size band — widen the set, not the band.</div>
+      <div class="why">Verified live: a 1,613 SF subject vs 5,000 SF comps is refused, verbatim, in the error banner.</div>
+    </div>
+    <div class="state amber">
+      <div class="when">Manual $/SF basis (no comps)</div>
+      <div class="copy">Synthetic ±7% band — labeled as such, never dressed up as comp dispersion.</div>
+      <div class="why">client_input posture; the basis note carries the label into the PDF.</div>
+    </div>
+    <div class="state">
+      <div class="when">Permit feed doesn't cover the city</div>
+      <div class="copy">"No live permit feed for West Covina yet. Covered: Los Angeles, Hacienda Heights…"</div>
+      <div class="why">HTTP 200, an answer — rendered as information, never as an error toast.</div>
+    </div>
+  </div>
+
+  <h2>Locked render rules → where they live</h2>
+  <div class="rules-scroll"><table class="rules">
+    <tr><th>Rule (from agents/arv + APPS.md)</th><th>Where the UI enforces it</th></tr>
+    <tr><td>Never show one number — band + breakeven + tiers, always</td><td>Answer screen has no single-value layout; P50 leads but P20/P80 are always beside it, in the PDF too</td></tr>
+    <tr><td>Confidence &amp; basis notes verbatim</td><td>Band card and PDF print <code class="mono">comp_set.note</code> untouched — no paraphrase layer exists</td></tr>
+    <tr><td>Comp flags are user testimony</td><td>Flags only ever set by tapping chips; PDF prints them under "the evidence" with that word</td></tr>
+    <tr><td>The app computes nothing</td><td>Every flag/deal change re-calls <code class="mono">arv-agent</code> (pure, fast); client math is display formatting only</td></tr>
+    <tr><td>MaxBid is the moat</td><td>No MaxBid endpoint in ARV_APP_CONTRACT.md; bid gap appears only as breakeven/red-line distance</td></tr>
+    <tr><td>Photos never saved</td><td>Comp-study flow (planned) sends user-held photos for description only; <code class="mono">photos_retained: 0</code> surfaces in the sheet</td></tr>
+    <tr><td>Orange = one action / unresolved / wayfinding</td><td>"Get the band" is the only orange button per screen; tier codes and drill-links are wayfinding orange</td></tr>
+  </table></div>
+
+  <h2>Build order from here</h2>
+  <div class="order">
+    <div class="step"><span class="n">AV-01</span><div class="what"><b>Sign-in gate</b><span>Decision needed: reuse Field's team-code + OTP spine vs. pilot allow-list. Everything else is unblocked without it — build last before external hands.</span></div></div>
+    <div class="step"><span class="n">AV-11</span><div class="what"><b>Comp study sheet</b><span>"What did THEY do for the price" on a sold comp — scope-agent comp_study, photos user-held, permits ride along. Slots into the curate card next to Permit history.</span></div></div>
+    <div class="step"><span class="n">AV-12/14</span><div class="what"><b>Market + Trends tabs</b><span>market_scope one-liner + table stakes; permit trends table. Both zero-MLS, engine-ready today.</span></div></div>
+    <div class="step"><span class="n">AV-15</span><div class="what"><b>Stuck-listing diagnostic</b><span>Realtor persona's tool; needs the photo-input UX designed (user-held images only).</span></div></div>
+    <div class="step"><span class="n">AV-16</span><div class="what"><b>Persistence decision</b><span>Recommend staying on-device + PDF (DD precedent); a save-arv-record into Records is a separate later call.</span></div></div>
+  </div>
+
+  <div class="foot">
+    <span>KEYPOINT · ARV — thin face on the BOBAI engines</span>
+    <span>plan: trunk/ARV_APP_PLAN.md · contract: trunk/ARV_APP_CONTRACT.md</span>
+  </div>
+</div>
