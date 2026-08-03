@@ -92,6 +92,7 @@ export default function CompSetScreen({ run, onChange, onRunArv, busy }) {
               onChangeText={(t) => { setSubjectSqft(t); }}
               placeholder="1800"
               keyboardType="numeric"
+              onSubmitEditing={() => { if (ready && !busy) onRunArv(sqftValue, numOrNull(afterSqft)); }}
             />
           </View>
           <View style={{ flex: 1 }}>
@@ -113,7 +114,20 @@ export default function CompSetScreen({ run, onChange, onRunArv, busy }) {
         </View>
       </Card>
 
-      <GroupLabel style={s.listLabel}>Comparable sales · {String(comps.length)}</GroupLabel>
+      <View style={s.listHead}>
+        <GroupLabel style={{ marginBottom: 0 }}>Comparable sales · {String(comps.length)}</GroupLabel>
+        {comps.length > 1 && (
+          <Pressable
+            onPress={() => {
+              const allSold = comps.every((c) => c.closed);
+              setComps(comps.map((c) => ({ ...c, closed: !allSold })));
+            }}
+            hitSlop={8}
+          >
+            <Text style={s.bulkLink}>{comps.every((c) => c.closed) ? "Clear sold flags" : "Mark all sold"}</Text>
+          </Pressable>
+        )}
+      </View>
       {comps.map((c, i) => (
         <CompCard
           key={`${c.id}-${i}`}
@@ -145,11 +159,11 @@ export default function CompSetScreen({ run, onChange, onRunArv, busy }) {
         disabled={!ready || busy}
         tone="accent"
       />
-      {!ready && (
-        <Text style={[type.body, s.hint]}>
-          {sqftValue ? "Add at least one comp." : "Subject square feet is required."}
-        </Text>
-      )}
+      <Text style={[type.spec, s.hint]}>
+        {ready
+          ? `Your testimony: ${comps.filter((c) => c.closed).length} sold · ${comps.filter((c) => c.renovated).length} renovated, of ${comps.length}`
+          : sqftValue ? "Add at least one comp." : "Subject square feet is required."}
+      </Text>
     </View>
   );
 }
@@ -159,6 +173,8 @@ const s = StyleSheet.create({
   subjectRow: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 6, marginBottom: 14, flexWrap: "wrap" },
   subjectCard: { marginBottom: 18 },
   listLabel: { marginBottom: 8 },
+  listHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 },
+  bulkLink: { ...type.bodyStrong, color: colors.accent, fontSize: 13 },
   compCard: { marginBottom: 10 },
   compHead: { flexDirection: "row", alignItems: "center", gap: 10 },
   remove: { ...type.bodyStrong, color: colors.textMuted, fontSize: 16, padding: 4 },

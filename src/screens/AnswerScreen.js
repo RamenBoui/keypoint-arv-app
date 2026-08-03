@@ -140,7 +140,14 @@ function DealForm({ initial, onRun, busy }) {
       <GroupLabel>See the cushion — optional deal numbers</GroupLabel>
       <Field label="Purchase price" value={purchase} onChangeText={setPurchase} placeholder="800000" keyboardType="numeric" />
       <Field label="Build cost" value={build} onChangeText={setBuild} placeholder="150000" keyboardType="numeric" />
-      <Field label="Term (months)" value={term} onChangeText={setTerm} placeholder="6" keyboardType="numeric" />
+      <Field
+        label="Term (months)"
+        value={term}
+        onChangeText={setTerm}
+        placeholder="6"
+        keyboardType="numeric"
+        onSubmitEditing={() => { if (ok && !busy) onRun({ purchase_price: p, build_cost: b, term_months: t }); }}
+      />
       <PrimaryButton
         title={busy ? "Running…" : "Show breakeven"}
         onPress={() => onRun({ purchase_price: p, build_cost: b, term_months: t })}

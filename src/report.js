@@ -111,15 +111,26 @@ export function buildReportHtml(run, result) {
 export async function shareReport(run, result) {
   const html = buildReportHtml(run, result);
   if (Platform.OS === "web") {
-    // The browser's print dialog IS the PDF path on web (Save as PDF / share).
-    const w = window.open("", "_blank");
-    if (!w) return { ok: false, reason: "popup-blocked" };
-    w.document.write(html);
-    w.document.close();
-    w.focus();
-    // Give the fonts/layout a beat before the dialog.
-    setTimeout(() => { try { w.print(); } catch {} }, 250);
-    return { ok: true };
+    // The browser's print dialog IS the PDF path on web (Save as PDF /
+    // share). Printed through a hidden SAME-PAGE iframe: popup blockers
+    // killed window.open silently on phones, and an iframe has nothing to
+    // block. Cleaned up after the dialog closes.
+    try {
+      const frame = document.createElement("iframe");
+      frame.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;";
+      document.body.appendChild(frame);
+      const doc = frame.contentDocument;
+      doc.open();
+      doc.write(html);
+      doc.close();
+      await new Promise((res) => setTimeout(res, 250)); // fonts/layout beat
+      frame.contentWindow.focus();
+      frame.contentWindow.print();
+      setTimeout(() => frame.remove(), 60_000);
+      return { ok: true };
+    } catch {
+      return { ok: false, reason: "print-failed" };
+    }
   }
   try {
     const Print = require("expo-print");

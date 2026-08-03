@@ -2,7 +2,7 @@
 // ARV agent: the app computes nothing, engines decide, this renders.
 // Contract: BOBAI/trunk/ARV_APP_CONTRACT.md. Hand-rolled screen stack
 // (address → comps → answer), same pattern as the Field app.
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
 import { arvAgent } from "./src/api";
 import { takeSharedRun } from "./src/share";
@@ -20,6 +20,14 @@ export default function App() {
   const [result, setResult] = useState(null); // last arv-agent response
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+  const scroller = useRef(null);
+
+  // A screen change (or a fresh error banner) always starts at the top —
+  // landing mid-scroll on the Answer, or erroring above the fold, reads as
+  // "nothing happened".
+  useEffect(() => {
+    scroller.current?.scrollTo?.({ y: 0, animated: false });
+  }, [screen, error]);
 
   useEffect(() => {
     ensureFontsWeb();
@@ -70,7 +78,7 @@ export default function App() {
         <Text style={type.brandLockup}>KEYPOINT · ARV</Text>
         <Text style={type.date}>{new Date().toISOString().slice(0, 10)}</Text>
       </View>
-      <ScrollView style={s.body} contentContainerStyle={s.bodyContent} keyboardShouldPersistTaps="handled">
+      <ScrollView ref={scroller} style={s.body} contentContainerStyle={s.bodyContent} keyboardShouldPersistTaps="handled">
         {error ? <Text style={s.error}>{error}</Text> : null}
         {screen === "address" && (
           <AddressScreen
