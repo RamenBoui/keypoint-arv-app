@@ -5,15 +5,17 @@
 import { useEffect, useState } from "react";
 import { Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
 import { arvAgent } from "./src/api";
+import { takeSharedRun } from "./src/share";
 import { load, rememberRun } from "./src/store";
 import { colors, ensureFontsWeb, type } from "./src/theme";
 import AddressScreen from "./src/screens/AddressScreen";
 import CompSetScreen from "./src/screens/CompSetScreen";
+import CompareScreen from "./src/screens/CompareScreen";
 import AnswerScreen from "./src/screens/AnswerScreen";
 
 export default function App() {
   const [ready, setReady] = useState(false);
-  const [screen, setScreen] = useState("address"); // address | comps | answer
+  const [screen, setScreen] = useState("address"); // address | comps | answer | compare
   const [run, setRun] = useState(null); // { addressText, address, subject, comps, deal, enriched }
   const [result, setResult] = useState(null); // last arv-agent response
   const [busy, setBusy] = useState(false);
@@ -21,7 +23,17 @@ export default function App() {
 
   useEffect(() => {
     ensureFontsWeb();
-    load().then(() => setReady(true));
+    load().then(() => {
+      setReady(true);
+      // A shared link (#run=…) opens straight into its curated run — flags
+      // included — landing on Curate so the receiver can inspect the
+      // testimony before the band.
+      const shared = takeSharedRun();
+      if (shared) {
+        setRun(shared);
+        setScreen("comps");
+      }
+    });
   }, []);
 
   // One entry point for every valuation call, so a flag change, a deal edit,
@@ -64,6 +76,13 @@ export default function App() {
           <AddressScreen
             onSubject={(r) => { setRun(r); setResult(null); setScreen("comps"); }}
             onRestoreRun={(r) => { setRun(r); setResult(null); setScreen("comps"); }}
+            onCompare={() => setScreen("compare")}
+          />
+        )}
+        {screen === "compare" && (
+          <CompareScreen
+            onOpenRun={(r) => { setRun(r); setResult(null); setScreen("comps"); }}
+            onBack={() => setScreen("address")}
           />
         )}
         {screen === "comps" && run && (

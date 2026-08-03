@@ -8,7 +8,7 @@ import { parseAddress } from "../util";
 import { Card, Field, GroupLabel, PrimaryButton } from "../components/ui";
 import { colors, type } from "../theme";
 
-export default function AddressScreen({ onSubject, onRestoreRun }) {
+export default function AddressScreen({ onSubject, onRestoreRun, onCompare }) {
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -28,7 +28,10 @@ export default function AddressScreen({ onSubject, onRestoreRun }) {
       onSubject({
         addressText: r.resolvedAddress || text.trim(),
         address,
-        subject: { square_feet: r.sqft, beds: r.beds, baths: r.baths, yearBuilt: r.yearBuilt, asIsAvm: r.asIsAvm },
+        subject: {
+          square_feet: r.sqft, beds: r.beds, baths: r.baths, yearBuilt: r.yearBuilt,
+          asIsAvm: r.asIsAvm, marketRent: r.marketRent,
+        },
         comps: r.candidates,
         enriched: true,
       });
@@ -73,7 +76,14 @@ export default function AddressScreen({ onSubject, onRestoreRun }) {
 
       {recent.length > 0 && (
         <View style={s.recents}>
-          <GroupLabel>Recent</GroupLabel>
+          <View style={s.recentHead}>
+            <GroupLabel style={{ marginBottom: 0 }}>Recent</GroupLabel>
+            {recent.length >= 2 && (
+              <Pressable onPress={onCompare} hitSlop={8}>
+                <Text style={s.compareLink}>Compare two ▸</Text>
+              </Pressable>
+            )}
+          </View>
           {recent.map((r) => (
             <Pressable key={r.addressText} onPress={() => onRestoreRun(r)} style={({ pressed }) => [s.recentRow, pressed && { opacity: 0.6 }]}>
               <Text style={type.bodyStrong} numberOfLines={1}>{r.addressText}</Text>
@@ -93,6 +103,8 @@ const s = StyleSheet.create({
   error: { ...type.body, color: colors.red, marginBottom: 10 },
   busyRow: { flexDirection: "row", alignItems: "center", minHeight: 52 },
   recents: { marginTop: 4 },
+  recentHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 },
+  compareLink: { ...type.bodyStrong, color: colors.accent, fontSize: 13 },
   recentRow: {
     flexDirection: "row",
     justifyContent: "space-between",

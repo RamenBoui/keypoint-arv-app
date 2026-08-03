@@ -6,7 +6,9 @@ import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { fmtMoney, fmtMoneyFull, fmtPsf, fmtInt, numOrNull } from "../util";
 import { Card, Divider, Field, GhostButton, GroupLabel, Pill, PrimaryButton } from "../components/ui";
+import ContextTabs from "../components/ContextTabs";
 import { shareReport } from "../report";
+import { copyShareUrl, shareUrl } from "../share";
 import { colors, type } from "../theme";
 
 const CONF_TONE = { high: "green", medium: "amber", low: "red" };
@@ -42,6 +44,53 @@ function BandCard({ band, compSet, basisNote }) {
         <Text style={s.scream}>NONE SOLD — do not base an ARV on this comp set.</Text>
       )}
       <Text style={[type.spec, s.note]}>{compSet?.note ?? basisNote}</Text>
+    </Card>
+  );
+}
+
+// X-05/X-06 — the margin is the product: put today's numbers (as-is AVM,
+// market rent — both straight from enrichment) beside the after-work P50 so
+// the delta reads at a glance. Display subtraction only, no valuation math.
+function TodayVsAfter({ subject, band }) {
+  const avm = subject.asIsAvm;
+  const rent = subject.marketRent;
+  if (!avm && !rent) return null;
+  const p50 = band?.arv?.p50;
+  const delta = avm && p50 ? p50 - avm : null;
+  return (
+    <Card style={s.beCard}>
+      <GroupLabel>Today vs after the work</GroupLabel>
+      <View style={s.beRow}>
+        {avm ? (
+          <View style={s.beCell}>
+            <Text style={type.microLabel}>AS-IS (AVM)</Text>
+            <Text style={s.beMoney}>{fmtMoney(avm)}</Text>
+          </View>
+        ) : null}
+        {p50 ? (
+          <View style={s.beCell}>
+            <Text style={type.microLabel}>AFTER · P50</Text>
+            <Text style={s.beMoney}>{fmtMoney(p50)}</Text>
+          </View>
+        ) : null}
+        {delta !== null ? (
+          <View style={s.beCell}>
+            <Text style={type.microLabel}>THE GAP</Text>
+            <Text style={[s.beMoney, { color: delta >= 0 ? colors.green : colors.red }]}>
+              {delta >= 0 ? "+" : "−"}{fmtMoney(Math.abs(delta))}
+            </Text>
+          </View>
+        ) : null}
+      </View>
+      {delta !== null && delta < 0 && (
+        <Text style={[type.spec, s.note, { color: colors.amber }]}>
+          The as-is AVM already prices above this comp set's after-work P50 —
+          check the comps match the subject's class before trusting either number.
+        </Text>
+      )}
+      {rent ? (
+        <Text style={[type.spec, s.note]}>Market rent (as-is): {fmtMoneyFull(rent)}/mo — the hold-instead-of-sell anchor.</Text>
+      ) : null}
     </Card>
   );
 }
@@ -103,6 +152,7 @@ function DealForm({ initial, onRun, busy }) {
 
 export default function AnswerScreen({ run, result, busy, onRunDeal, onBack, onNewAddress }) {
   const [editingDeal, setEditingDeal] = useState(false);
+  const [copied, setCopied] = useState(false);
   const { band, breakeven, tiers, comp_set, basis_note, posture } = result;
 
   return (
@@ -110,9 +160,11 @@ export default function AnswerScreen({ run, result, busy, onRunDeal, onBack, onN
       <Text style={type.screenTitle} numberOfLines={2}>{run.addressText}</Text>
       <Text style={[type.spec, s.postureLine]}>
         posture: {posture} · {fmtInt(run.subject.square_feet)} SF subject
+        {run.subject.total_sf_after ? ` → ${fmtInt(run.subject.total_sf_after)} SF once built` : ""}
       </Text>
 
       <BandCard band={band} compSet={comp_set} basisNote={basis_note} />
+      <TodayVsAfter subject={run.subject} band={band} />
 
       {breakeven && !editingDeal ? (
         <BreakevenCard breakeven={breakeven} deal={run.deal} onEdit={() => setEditingDeal(true)} />
@@ -139,10 +191,26 @@ export default function AnswerScreen({ run, result, busy, onRunDeal, onBack, onN
         </Text>
       </Card>
 
+      <ContextTabs run={run} />
+
       {result.footer ? <Text style={[type.spec, s.footer]}>{result.footer}</Text> : null}
 
       <Divider />
       <PrimaryButton title="Share as PDF" onPress={() => shareReport(run, result)} />
+      {shareUrl(run) && (
+        <>
+          <View style={{ height: 8 }} />
+          <GhostButton
+            title={copied ? "✓ Link copied — flags and all" : "Copy share link"}
+            onPress={async () => {
+              if (await copyShareUrl(run)) {
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2500);
+              }
+            }}
+          />
+        </>
+      )}
       <View style={{ height: 8 }} />
       <GhostButton title="← Adjust comps" onPress={onBack} />
       <GhostButton title="New address" tone="accent" onPress={onNewAddress} />

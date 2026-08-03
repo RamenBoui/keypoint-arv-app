@@ -22,13 +22,22 @@ export function fmtInt(n) {
 }
 
 // "1257 Inspiration Point, West Covina, CA 91791" → enrich address object.
+// Forgiving (X-03): collapses stray whitespace, accepts "City CA 90036"
+// jammed into one comma segment, and tolerates a trailing zip/state.
 export function parseAddress(raw) {
-  const parts = raw.split(",").map((p) => p.trim()).filter(Boolean);
+  const cleaned = String(raw).replace(/\s+/g, " ").trim();
+  const parts = cleaned.split(",").map((p) => p.trim()).filter(Boolean);
   if (parts.length < 2) return null;
   const line = parts[0];
-  const city = parts[1];
+  let city = parts[1];
   let state = "CA";
   let zip = "";
+  // state/zip riding at the end of the city segment ("Los Angeles CA 90036")
+  const tail = city.match(/^(.*?)(?:\s+([A-Za-z]{2}))?(?:\s+(\d{5}))?$/);
+  if (tail) {
+    if (tail[2] && tail[2].toUpperCase() !== "LA") { city = tail[1]; state = tail[2].toUpperCase(); }
+    if (tail[3]) { city = (tail[1] || city).trim(); zip = tail[3]; }
+  }
   if (parts[2]) {
     const m = parts[2].match(/^([A-Za-z]{2})?\s*(\d{5})?/);
     if (m) {
@@ -36,7 +45,7 @@ export function parseAddress(raw) {
       if (m[2]) zip = m[2];
     }
   }
-  return { line, city, state, zip };
+  return { line, city: city.trim(), state, zip };
 }
 
 export const numOrNull = (s) => {

@@ -79,6 +79,7 @@ export function buildReportHtml(run, result) {
   ${comp_set ? `<span class="meta"> · ${comp_set.used} comps used</span>` : ""}
   ${noSold ? `<div class="scream">NONE SOLD — do not base an ARV on this comp set.</div>` : ""}
   <div class="note">${esc(comp_set?.note ?? basis_note ?? "")}</div>
+  ${run.subject.asIsAvm ? `<div class="note">As-is (AVM): <b>${esc(fmtMoney(run.subject.asIsAvm))}</b>${band?.arv?.p50 ? ` · after the work (P50): <b>${esc(fmtMoney(band.arv.p50))}</b> · the gap: <b>${band.arv.p50 - run.subject.asIsAvm >= 0 ? "+" : "−"}${esc(fmtMoney(Math.abs(band.arv.p50 - run.subject.asIsAvm)))}</b>` : ""}${run.subject.marketRent ? ` · market rent ${esc(fmtMoneyFull(run.subject.marketRent))}/mo` : ""}</div>` : ""}
 
   ${breakeven ? `
   <h2>Breakeven vs the deal</h2>

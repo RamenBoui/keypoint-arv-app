@@ -1,5 +1,6 @@
 // Engine calls — the ARV app computes nothing; engines decide, the app
 // renders (BOBAI/trunk/ARV_APP_CONTRACT.md pins every shape used here).
+import { parseAddress } from "./util";
 const BASE = "https://bbkeogzyqwszmijmvlmj.supabase.co/functions/v1";
 // Publishable anon key — safe in the client (RLS + guest gates server-side).
 const ANON =
@@ -36,6 +37,7 @@ export async function enrich(address) {
     baths: f.physical?.baths ?? null,
     yearBuilt: f.physical?.yearBuilt ?? null,
     asIsAvm: f.valuation?.asIsAvm ?? null,
+    marketRent: f.rental?.marketRent ?? null,
     candidates: (Array.isArray(f.comps) ? f.comps : [])
       .filter((c) => c && c.price > 0 && c.sqft > 0)
       .map((c, i) => ({
@@ -79,4 +81,45 @@ export function arvAgent({ subject, comps, deal }) {
 // { covered: false } is an honest answer, not an error.
 export function permitHistory(address, city) {
   return call("permit-history", { address, city });
+}
+
+// ---- Context modes (scope-agent) — the "why is the band what it is" layer.
+
+// Market scope: what the SOLD set already delivered at this price point.
+// Reads each comp's live permits (+ photos when supplied) — slow by design;
+// the caller shows a takes-a-minute state. Studies persist server-side.
+export function marketScope(comps, fallbackCity) {
+  return call("scope-agent", {
+    mode: "market_scope",
+    comps: comps.map((c) => ({
+      // the engine needs city as its own field to reach the permit feed —
+      // comp addresses carry it inline, so parse it out (fallback: subject's)
+      address: c.address,
+      city: parseAddress(c.address)?.city ?? fallbackCity ?? null,
+      sale_price: c.sale_price,
+      square_feet: c.square_feet,
+    })),
+  });
+}
+
+// Permit trends for the area — deterministic counting, no MLS, honest about
+// zip filters and row caps.
+export function marketTrends(city, zip) {
+  return call("scope-agent", { mode: "market_trends", city, ...(zip ? { zip } : {}) });
+}
+
+// Stuck-listing diagnostic — the computed market half (price vs demonstrated
+// ceiling, DOM vs sold median, cuts logic). Photos deliberately omitted in
+// v1: the caller must lawfully hold them, and the computed half already
+// carries the sharpest signals.
+export function listingDiagnostic({ list_price, square_feet, days_on_market, price_cuts }, comps) {
+  return call("scope-agent", {
+    mode: "listing_diagnostic",
+    listing: { list_price, square_feet, days_on_market, price_cuts },
+    comps: comps.map((c) => ({
+      address: c.address,
+      sale_price: c.sale_price,
+      square_feet: c.square_feet,
+    })),
+  });
 }
