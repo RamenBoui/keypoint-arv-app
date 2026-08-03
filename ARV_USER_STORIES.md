@@ -96,7 +96,7 @@ Status legend: ✅ built · ◐ engine live, UI pending · ⏸ needs engine/deci
 | X-01 | No account, ever, for the core question (settled 2026-08-03) | Zero friction between curiosity and answer — the whole funnel | ✅ |
 | X-02 | Works on the phone browser from a shared link — no install | The app spreads by URL | ✅ |
 | X-03 | Address autocomplete (Photon/OSM — free, no key, LA-biased, fail-silent) + typo tolerance | The one input everything hangs on deserves forgiveness | ✅ |
-| X-04 | Spanish (es) localization | House pattern (Field is en/es/zh); LA market reality | ○ |
+| X-04 | Spanish (es) localization — every screen, honesty states, and the PDF itself; EN|ES header toggle, persisted | House pattern (Field is en/es/zh); LA market reality | ✅ |
 | X-05 | "Today vs after the work": as-is AVM · after-work P50 · THE GAP, on screen and in the PDF (with an honesty note when the AVM prices above the set) | The margin is the product; show it explicitly | ✅ |
 | X-06 | Buy-and-hold angle: market rent rendered beside the band and in the PDF | Widens the investor persona without new engine work | ✅ |
 | X-07 | A saved run survives reinstall / reaches Records | The AV-16 decision: on-device now; `save-arv-record` later | ⏸ |
@@ -108,8 +108,7 @@ Status legend: ✅ built · ◐ engine live, UI pending · ⏸ needs engine/deci
 Everything above marked ✅ shipped and was browser-verified against the live
 backend. Server change that made it possible: scope-agent's market_scope and
 listing_diagnostic opened to the anon key (analysis only — anonymous callers
-never persist; comp_study stays write-gated). Remaining: **X-04 Spanish**
-(deliberately not half-shipped — needs a full i18n pass like Field's),
-**X-07/AV-16 saved-runs-on-server** (decision stands: on-device + share-link
-covers it until a save-arv-record lands), and **X-03 autocomplete** (needs a
-places API; typo tolerance shipped).
+never persist; comp_study stays write-gated). Remaining: **X-07/AV-16 saved-runs-on-server** (decision stands: on-device +
+share-link covers it until a save-arv-record lands). X-04 Spanish shipped
+2026-08-03 as a full pass (screens + PDF + toggle, guarded by an
+every-key-translated test); X-03 shipped with Photon autocomplete.

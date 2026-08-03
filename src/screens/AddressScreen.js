@@ -9,7 +9,7 @@ import { parseAddress } from "../util";
 import { Card, Field, GroupLabel, PrimaryButton } from "../components/ui";
 import { colors, type } from "../theme";
 
-export default function AddressScreen({ onSubject, onRestoreRun, onCompare }) {
+export default function AddressScreen({ t, onSubject, onRestoreRun, onCompare }) {
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -36,7 +36,7 @@ export default function AddressScreen({ onSubject, onRestoreRun, onCompare }) {
   const go = async (addressOverride, labelOverride) => {
     const address = addressOverride ?? parseAddress(text);
     if (!address) {
-      setError("Enter the address as: street, city — e.g. 1257 Inspiration Point, West Covina, CA");
+      setError(t("addressError"));
       return;
     }
     setError(null);
@@ -70,14 +70,14 @@ export default function AddressScreen({ onSubject, onRestoreRun, onCompare }) {
 
   return (
     <View style={s.wrap}>
-      <Text style={type.screenTitle}>What will it be worth?</Text>
+      <Text style={type.screenTitle}>{t("heroTitle")}</Text>
       <Text style={[type.body, s.sub]}>
-        Address in — defensible band out. Every number traces to its evidence.
+        {t("heroSub")}
       </Text>
 
       <Card style={s.card}>
         <Field
-          label="Property address"
+          label={t("addressLabel")}
           value={text}
           onChangeText={onChangeText}
           placeholder="1257 Inspiration Point, West Covina, CA"
@@ -95,27 +95,27 @@ export default function AddressScreen({ onSubject, onRestoreRun, onCompare }) {
                 <Text style={type.bodyStrong} numberOfLines={1}>{sug.label}</Text>
               </Pressable>
             ))}
-            <Text style={s.suggestCredit}>suggestions © OpenStreetMap</Text>
+            <Text style={s.suggestCredit}>{t("suggestCredit")}</Text>
           </View>
         )}
         {error ? <Text style={s.error}>{error}</Text> : null}
         {busy ? (
           <View style={s.busyRow}>
             <ActivityIndicator color={colors.accent} />
-            <Text style={[type.body, { marginLeft: 10 }]}>Pulling facts and candidate comps…</Text>
+            <Text style={[type.body, { marginLeft: 10 }]}>{t("enriching")}</Text>
           </View>
         ) : (
-          <PrimaryButton title="Find comps" onPress={() => go()} disabled={!text.trim()} />
+          <PrimaryButton title={t("findComps")} onPress={() => go()} disabled={!text.trim()} />
         )}
       </Card>
 
       {recent.length > 0 && (
         <View style={s.recents}>
           <View style={s.recentHead}>
-            <GroupLabel style={{ marginBottom: 0 }}>Recent</GroupLabel>
+            <GroupLabel style={{ marginBottom: 0 }}>{t("recent")}</GroupLabel>
             {recent.length >= 2 && (
               <Pressable onPress={onCompare} hitSlop={8}>
-                <Text style={s.compareLink}>Compare two ▸</Text>
+                <Text style={s.compareLink}>{t("compareTwo")}</Text>
               </Pressable>
             )}
           </View>

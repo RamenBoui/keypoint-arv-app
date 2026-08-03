@@ -8,7 +8,7 @@ import { permitHistory } from "../api";
 import { parseAddress } from "../util";
 import { colors, type } from "../theme";
 
-export default function PermitsInline({ addressText, fallbackCity }) {
+export default function PermitsInline({ t, addressText, fallbackCity }) {
   const [state, setState] = useState("idle"); // idle | loading | done
   const [result, setResult] = useState(null);
 
@@ -31,7 +31,7 @@ export default function PermitsInline({ addressText, fallbackCity }) {
   if (state === "idle") {
     return (
       <Pressable onPress={load} hitSlop={6}>
-        <Text style={s.link}>Permit history ▸</Text>
+        <Text style={s.link}>{t("permitHistory")}</Text>
       </Pressable>
     );
   }
@@ -39,13 +39,13 @@ export default function PermitsInline({ addressText, fallbackCity }) {
     return (
       <View style={s.row}>
         <ActivityIndicator size="small" color={colors.accent} />
-        <Text style={[type.spec, { marginLeft: 8 }]}>reading the public record…</Text>
+        <Text style={[type.spec, { marginLeft: 8 }]}>{t("readingRecord")}</Text>
       </View>
     );
   }
   if (!result || result.ok === false) {
     // covered:false arrives as HTTP 200 (ok:true) — this branch is real failure.
-    return <Text style={s.warn}>Permit lookup failed — try again later.</Text>;
+    return <Text style={s.warn}>{t("permitFailed")}</Text>;
   }
   if (result.covered === false) {
     // `supported` rows are { jurisdiction, cities: [...] } — name the cities.
@@ -55,7 +55,7 @@ export default function PermitsInline({ addressText, fallbackCity }) {
       .slice(0, 6);
     return (
       <Text style={type.spec}>
-        No live permit feed for {result.city} yet. Covered: {cities.join(", ") || "—"}…
+        {t("noFeedFor")} {result.city}{t("yetCovered")} {cities.join(", ") || "—"}…
       </Text>
     );
   }
@@ -63,9 +63,9 @@ export default function PermitsInline({ addressText, fallbackCity }) {
   return (
     <View>
       <Text style={s.meta}>
-        {result.jurisdiction} · live public record · {permits.length} permit{permits.length === 1 ? "" : "s"}
+        {result.jurisdiction} · {t("livePublicRecord")} · {permits.length} {permits.length === 1 ? t("permitOne") : t("permitMany")}
       </Text>
-      {permits.length === 0 && <Text style={type.spec}>No permits on file for this address.</Text>}
+      {permits.length === 0 && <Text style={type.spec}>{t("noPermitsOnFile")}</Text>}
       {permits.slice(0, 8).map((p, i) => (
         <View key={i} style={s.permitRow}>
           <Text style={s.permitDate}>{String(p.issued_date ?? "").slice(0, 10) || "—"}</Text>
@@ -81,7 +81,7 @@ export default function PermitsInline({ addressText, fallbackCity }) {
           </View>
         </View>
       ))}
-      {permits.length > 8 && <Text style={type.spec}>…and {permits.length - 8} more.</Text>}
+      {permits.length > 8 && <Text style={type.spec}>{t("andMore")} {permits.length - 8} {t("more")}</Text>}
     </View>
   );
 }

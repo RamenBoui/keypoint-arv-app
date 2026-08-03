@@ -3,10 +3,11 @@
 // Contract: BOBAI/trunk/ARV_APP_CONTRACT.md. Hand-rolled screen stack
 // (address → comps → answer), same pattern as the Field app.
 import { useEffect, useRef, useState } from "react";
-import { Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
 import { arvAgent } from "./src/api";
+import { makeT } from "./src/i18n";
 import { takeSharedRun } from "./src/share";
-import { load, rememberRun } from "./src/store";
+import { getLang, load, rememberRun, setLang } from "./src/store";
 import { colors, ensureFontsWeb, type } from "./src/theme";
 import AddressScreen from "./src/screens/AddressScreen";
 import CompSetScreen from "./src/screens/CompSetScreen";
@@ -20,7 +21,9 @@ export default function App() {
   const [result, setResult] = useState(null); // last arv-agent response
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+  const [lang, setLangState] = useState("en");
   const scroller = useRef(null);
+  const t = makeT(lang);
 
   // A screen change (or a fresh error banner) always starts at the top —
   // landing mid-scroll on the Answer, or erroring above the fold, reads as
@@ -32,6 +35,7 @@ export default function App() {
   useEffect(() => {
     ensureFontsWeb();
     load().then(() => {
+      setLangState(getLang());
       setReady(true);
       // A shared link (#run=…) opens straight into its curated run — flags
       // included — landing on Curate so the receiver can inspect the
@@ -76,12 +80,22 @@ export default function App() {
       <StatusBar barStyle="dark-content" backgroundColor={colors.bg} />
       <View style={s.header}>
         <Text style={type.brandLockup}>KEYPOINT · ARV</Text>
-        <Text style={type.date}>{new Date().toISOString().slice(0, 10)}</Text>
+        <View style={s.headerRight}>
+          <View style={s.langRow}>
+            {["en", "es"].map((l) => (
+              <Pressable key={l} onPress={() => { setLangState(l); setLang(l); }} hitSlop={8}>
+                <Text style={[s.langOpt, lang === l && s.langOptOn]}>{l.toUpperCase()}</Text>
+              </Pressable>
+            ))}
+          </View>
+          <Text style={type.date}>{new Date().toISOString().slice(0, 10)}</Text>
+        </View>
       </View>
       <ScrollView ref={scroller} style={s.body} contentContainerStyle={s.bodyContent} keyboardShouldPersistTaps="handled">
         {error ? <Text style={s.error}>{error}</Text> : null}
         {screen === "address" && (
           <AddressScreen
+            t={t}
             onSubject={(r) => { setRun(r); setResult(null); setScreen("comps"); }}
             onRestoreRun={(r) => { setRun(r); setResult(null); setScreen("comps"); }}
             onCompare={() => setScreen("compare")}
@@ -89,12 +103,14 @@ export default function App() {
         )}
         {screen === "compare" && (
           <CompareScreen
+            t={t}
             onOpenRun={(r) => { setRun(r); setResult(null); setScreen("comps"); }}
             onBack={() => setScreen("address")}
           />
         )}
         {screen === "comps" && run && (
           <CompSetScreen
+            t={t}
             run={run}
             busy={busy}
             onChange={setRun}
@@ -104,6 +120,8 @@ export default function App() {
         )}
         {screen === "answer" && run && result && (
           <AnswerScreen
+            t={t}
+            lang={lang}
             run={run}
             result={result}
             busy={busy}
@@ -133,6 +151,10 @@ const s = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
+  headerRight: { flexDirection: "row", alignItems: "center", gap: 12 },
+  langRow: { flexDirection: "row", gap: 6 },
+  langOpt: { ...type.brandLockup, color: colors.textMuted },
+  langOptOn: { color: colors.accent },
   body: { flex: 1 },
   bodyContent: { maxWidth: 560, width: "100%", alignSelf: "center", paddingBottom: 40 },
   error: {

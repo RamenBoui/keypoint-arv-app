@@ -7,12 +7,14 @@
 // Native: expo-print → PDF file → native share sheet (DD-app pattern).
 // Web: a print window — the browser's "Save as PDF" is the share.
 import { Platform } from "react-native";
+import { makeT } from "./i18n";
 import { fmtMoney, fmtMoneyFull, fmtPsf, fmtInt } from "./util";
 
 const esc = (s) =>
   String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-export function buildReportHtml(run, result) {
+export function buildReportHtml(run, result, lang = "en") {
+  const t = makeT(lang);
   const { band, breakeven, tiers, comp_set, basis_note, posture, footer } = result;
   const conf = comp_set?.confidence ?? "low";
   const noSold = comp_set?.evidence === "listings_or_unflagged";
@@ -24,8 +26,8 @@ export function buildReportHtml(run, result) {
       <td class="num">${esc(fmtMoneyFull(c.sale_price))}</td>
       <td class="num">${esc(fmtInt(c.square_feet))}</td>
       <td class="num">${esc(fmtPsf(c.sale_price / c.square_feet))}</td>
-      <td class="flag">${c.closed ? "✓ sold" : "—"}</td>
-      <td class="flag">${c.renovated ? "✓ renovated" : "—"}</td>
+      <td class="flag">${c.closed ? t("pdfSoldFlag") : "—"}</td>
+      <td class="flag">${c.renovated ? t("pdfRenovatedFlag") : "—"}</td>
     </tr>`).join("");
 
   const tierRows = (tiers ?? []).map((t) => `
@@ -68,48 +70,48 @@ export function buildReportHtml(run, result) {
 </style></head><body>
   <div class="brand">Keypoint · ARV</div>
   <h1>${esc(run.addressText)}</h1>
-  <div class="meta">${esc(fmtInt(run.subject.square_feet))} SF subject${run.subject.total_sf_after ? ` → ${esc(fmtInt(run.subject.total_sf_after))} SF once built` : ""} · posture: ${esc(posture)} · ${today}</div>
+  <div class="meta">${esc(fmtInt(run.subject.square_feet))} ${t("pdfSubject")}${run.subject.total_sf_after ? ` → ${esc(fmtInt(run.subject.total_sf_after))} ${t("pdfOnceBuilt")}` : ""} · posture: ${esc(posture)} · ${today}</div>
 
   <div class="band">
-    <div class="cell"><div class="lbl">P20 · stress</div><div class="money">${esc(fmtMoney(band.arv?.p20))}</div><div class="meta">${esc(fmtPsf(band.exit_psf?.p20))}</div></div>
-    <div class="cell mid"><div class="lbl">P50 · working number</div><div class="money">${esc(fmtMoney(band.arv?.p50))}</div><div class="meta">${esc(fmtPsf(band.exit_psf?.p50))}</div></div>
-    <div class="cell"><div class="lbl">P80 · upside</div><div class="money">${esc(fmtMoney(band.arv?.p80))}</div><div class="meta">${esc(fmtPsf(band.exit_psf?.p80))}</div></div>
+    <div class="cell"><div class="lbl">${t("p20Stress")}</div><div class="money">${esc(fmtMoney(band.arv?.p20))}</div><div class="meta">${esc(fmtPsf(band.exit_psf?.p20))}</div></div>
+    <div class="cell mid"><div class="lbl">${t("p50Working")}</div><div class="money">${esc(fmtMoney(band.arv?.p50))}</div><div class="meta">${esc(fmtPsf(band.exit_psf?.p50))}</div></div>
+    <div class="cell"><div class="lbl">${t("p80Upside")}</div><div class="money">${esc(fmtMoney(band.arv?.p80))}</div><div class="meta">${esc(fmtPsf(band.exit_psf?.p80))}</div></div>
   </div>
-  <span class="conf ${esc(conf)}">confidence: ${esc(conf)}</span>
-  ${comp_set ? `<span class="meta"> · ${comp_set.used} comps used</span>` : ""}
-  ${noSold ? `<div class="scream">NONE SOLD — do not base an ARV on this comp set.</div>` : ""}
+  <span class="conf ${esc(conf)}">${t("pdfConfidence")} ${esc(conf)}</span>
+  ${comp_set ? `<span class="meta"> · ${comp_set.used} ${t("pdfCompsUsed")}</span>` : ""}
+  ${noSold ? `<div class="scream">${t("noneSoldScream")}</div>` : ""}
   <div class="note">${esc(comp_set?.note ?? basis_note ?? "")}</div>
-  ${run.subject.asIsAvm ? `<div class="note">As-is (AVM): <b>${esc(fmtMoney(run.subject.asIsAvm))}</b>${band?.arv?.p50 ? ` · after the work (P50): <b>${esc(fmtMoney(band.arv.p50))}</b> · the gap: <b>${band.arv.p50 - run.subject.asIsAvm >= 0 ? "+" : "−"}${esc(fmtMoney(Math.abs(band.arv.p50 - run.subject.asIsAvm)))}</b>` : ""}${run.subject.marketRent ? ` · market rent ${esc(fmtMoneyFull(run.subject.marketRent))}/mo` : ""}</div>` : ""}
+  ${run.subject.asIsAvm ? `<div class="note">${t("pdfAsIs")} <b>${esc(fmtMoney(run.subject.asIsAvm))}</b>${band?.arv?.p50 ? ` · ${t("pdfAfterWork")} <b>${esc(fmtMoney(band.arv.p50))}</b> · ${t("pdfTheGap")} <b>${band.arv.p50 - run.subject.asIsAvm >= 0 ? "+" : "−"}${esc(fmtMoney(Math.abs(band.arv.p50 - run.subject.asIsAvm)))}</b>` : ""}${run.subject.marketRent ? ` · ${t("pdfMarketRent")} ${esc(fmtMoneyFull(run.subject.marketRent))}/mo` : ""}</div>` : ""}
 
   ${breakeven ? `
-  <h2>Breakeven vs the deal</h2>
+  <h2>${t("pdfBreakevenH")}</h2>
   <div class="be">
-    <div class="cell"><div class="lbl">Breakeven</div><div class="money">${esc(fmtPsf(breakeven.breakeven_psf))}</div></div>
-    <div class="cell"><div class="lbl">Red line</div><div class="money">${esc(fmtPsf(breakeven.redline_psf))}</div></div>
-    ${typeof breakeven.cushion_pct_vs === "number" ? `<div class="cell"><div class="lbl">Cushion vs P50</div><div class="money">${(breakeven.cushion_pct_vs * 100).toFixed(1)}%</div></div>` : ""}
+    <div class="cell"><div class="lbl">${t("pdfBreakeven")}</div><div class="money">${esc(fmtPsf(breakeven.breakeven_psf))}</div></div>
+    <div class="cell"><div class="lbl">${t("pdfRedLine")}</div><div class="money">${esc(fmtPsf(breakeven.redline_psf))}</div></div>
+    ${typeof breakeven.cushion_pct_vs === "number" ? `<div class="cell"><div class="lbl">${t("pdfCushion")}</div><div class="money">${(breakeven.cushion_pct_vs * 100).toFixed(1)}%</div></div>` : ""}
   </div>
   <div class="verdict ${String(breakeven.verdict).includes("UNDER") ? "under" : "clear"}">${esc(breakeven.verdict)}</div>
-  <div class="note">${esc(fmtMoneyFull(run.deal?.purchase_price))} purchase · ${esc(fmtMoneyFull(run.deal?.build_cost))} build · ${esc(run.deal?.term_months)} mo</div>` : ""}
+  <div class="note">${esc(fmtMoneyFull(run.deal?.purchase_price))} ${t("purchase")} · ${esc(fmtMoneyFull(run.deal?.build_cost))} ${t("build")} · ${esc(run.deal?.term_months)} ${t("mo")}</div>` : ""}
 
-  <h2>Comparable sales — the evidence</h2>
+  <h2>${t("pdfCompsH")}</h2>
   <table>
-    <tr><th>Address</th><th class="num">Sale</th><th class="num">SF</th><th class="num">$/SF</th><th>Closed</th><th>Renovated</th></tr>
+    <tr><th>${t("pdfAddress")}</th><th class="num">${t("pdfSale")}</th><th class="num">SF</th><th class="num">$/SF</th><th>${t("pdfClosed")}</th><th>${t("pdfRenovated")}</th></tr>
     ${compRows}
   </table>
-  <div class="note">Closed/renovated flags are the preparer's testimony; unflagged comps degrade confidence by design.</div>
+  <div class="note">${t("pdfFlagsNote")}</div>
 
-  <h2>ARV per scope tier</h2>
+  <h2>${t("pdfTiersH")}</h2>
   <table>
-    <tr><th>Tier</th><th>Scope</th><th class="num">SF</th><th class="num">Exit $/SF</th><th class="num">ARV (P50)</th></tr>
+    <tr><th>${t("pdfTier")}</th><th>${t("pdfScope")}</th><th class="num">SF</th><th class="num">${t("pdfExitPsf")}</th><th class="num">${t("pdfArvP50")}</th></tr>
     ${tierRows}
   </table>
 
-  <div class="footer">${esc(footer ?? "")}<br/>Generated by Keypoint ARV · valuation is a function of scope — never a single number.</div>
+  <div class="footer">${esc(footer ?? "")}<br/>${t("pdfFooter")}</div>
 </body></html>`;
 }
 
-export async function shareReport(run, result) {
-  const html = buildReportHtml(run, result);
+export async function shareReport(run, result, lang = "en") {
+  const html = buildReportHtml(run, result, lang);
   if (Platform.OS === "web") {
     // The browser's print dialog IS the PDF path on web (Save as PDF /
     // share). Printed through a hidden SAME-PAGE iframe: popup blockers

@@ -9,7 +9,7 @@ import { Card, Divider, Field, FlagChip, GhostButton, GroupLabel, Pill, PrimaryB
 import PermitsInline from "../components/PermitsInline";
 import { colors, type } from "../theme";
 
-function CompCard({ comp, fallbackCity, onToggle, onRemove }) {
+function CompCard({ t, comp, fallbackCity, onToggle, onRemove }) {
   return (
     <Card style={s.compCard}>
       <View style={s.compHead}>
@@ -26,19 +26,19 @@ function CompCard({ comp, fallbackCity, onToggle, onRemove }) {
         {comp.distanceMi != null ? ` · ${comp.distanceMi} mi` : ""}
       </Text>
       <View style={s.flagRow}>
-        <FlagChip label="Sold (closed)" on={comp.closed} onToggle={() => onToggle("closed")} />
-        <FlagChip label="Renovated" on={comp.renovated} onToggle={() => onToggle("renovated")} />
+        <FlagChip label={t("soldClosed")} on={comp.closed} onToggle={() => onToggle("closed")} />
+        <FlagChip label={t("renovated")} on={comp.renovated} onToggle={() => onToggle("renovated")} />
       </View>
       {!!comp.address && (
         <View style={s.permits}>
-          <PermitsInline addressText={comp.address} fallbackCity={fallbackCity} />
+          <PermitsInline t={t} addressText={comp.address} fallbackCity={fallbackCity} />
         </View>
       )}
     </Card>
   );
 }
 
-export default function CompSetScreen({ run, onChange, onRunArv, busy }) {
+export default function CompSetScreen({ t, run, onChange, onRunArv, busy }) {
   const { subject, comps, enriched } = run;
   const [adding, setAdding] = useState(false);
   const [addr, setAddr] = useState("");
@@ -75,10 +75,10 @@ export default function CompSetScreen({ run, onChange, onRunArv, busy }) {
     <View style={s.wrap}>
       <Text style={type.screenTitle} numberOfLines={2}>{run.addressText}</Text>
       <View style={s.subjectRow}>
-        {!enriched && <Pill text="ENRICHMENT UNAVAILABLE — MANUAL ENTRY" tone="amber" />}
+        {!enriched && <Pill text={t("manualEntryPill")} tone="amber" />}
         {subject.beds != null && (
           <Text style={type.spec}>
-            {subject.beds} bd · {subject.baths} ba{subject.yearBuilt ? ` · built ${subject.yearBuilt}` : ""}
+            {subject.beds} bd · {subject.baths} ba{subject.yearBuilt ? ` · ${t("builtLabel")} ${subject.yearBuilt}` : ""}
           </Text>
         )}
       </View>
@@ -87,9 +87,9 @@ export default function CompSetScreen({ run, onChange, onRunArv, busy }) {
         <View style={s.sizeRow}>
           <View style={{ flex: 1 }}>
             <Field
-              label="Subject square feet"
+              label={t("subjectSf")}
               value={subjectSqft}
-              onChangeText={(t) => { setSubjectSqft(t); }}
+              onChangeText={(v) => { setSubjectSqft(v); }}
               placeholder="1800"
               keyboardType="numeric"
               onSubmitEditing={() => { if (ready && !busy) onRunArv(sqftValue, numOrNull(afterSqft)); }}
@@ -97,25 +97,22 @@ export default function CompSetScreen({ run, onChange, onRunArv, busy }) {
           </View>
           <View style={{ flex: 1 }}>
             <Field
-              label="Size once built (opt.)"
+              label={t("sizeOnceBuilt")}
               value={afterSqft}
               onChangeText={setAfterSqft}
-              placeholder="adding SF?"
+              placeholder={t("sizePlaceholder")}
               keyboardType="numeric"
             />
           </View>
         </View>
-        <Text style={type.body}>
-          Mark what you know about each comp. Sold + renovated is the evidence the
-          band stands on — unflagged comps degrade confidence, and the agent says so.
-        </Text>
+        <Text style={type.body}>{t("curateHint")}</Text>
         <View style={s.permits}>
-          <PermitsInline addressText={run.addressText} fallbackCity={run.address?.city} />
+          <PermitsInline t={t} addressText={run.addressText} fallbackCity={run.address?.city} />
         </View>
       </Card>
 
       <View style={s.listHead}>
-        <GroupLabel style={{ marginBottom: 0 }}>Comparable sales · {String(comps.length)}</GroupLabel>
+        <GroupLabel style={{ marginBottom: 0 }}>{t("comparableSales")} · {String(comps.length)}</GroupLabel>
         {comps.length > 1 && (
           <Pressable
             onPress={() => {
@@ -124,13 +121,14 @@ export default function CompSetScreen({ run, onChange, onRunArv, busy }) {
             }}
             hitSlop={8}
           >
-            <Text style={s.bulkLink}>{comps.every((c) => c.closed) ? "Clear sold flags" : "Mark all sold"}</Text>
+            <Text style={s.bulkLink}>{comps.every((c) => c.closed) ? t("clearSoldFlags") : t("markAllSold")}</Text>
           </Pressable>
         )}
       </View>
       {comps.map((c, i) => (
         <CompCard
           key={`${c.id}-${i}`}
+          t={t}
           comp={c}
           fallbackCity={run.address?.city}
           onToggle={(flag) => setComps(comps.map((x, j) => (j === i ? { ...x, [flag]: !x[flag] } : x)))}
@@ -140,29 +138,29 @@ export default function CompSetScreen({ run, onChange, onRunArv, busy }) {
 
       {adding ? (
         <Card style={s.compCard}>
-          <Field label="Comp address" value={addr} onChangeText={setAddr} placeholder="412 Oak St" autoFocus />
-          <Field label="Sale price" value={price} onChangeText={setPrice} placeholder="950000" keyboardType="numeric" />
-          <Field label="Square feet" value={sqft} onChangeText={setSqft} placeholder="1650" keyboardType="numeric" />
-          <PrimaryButton title="Add comp" onPress={addComp} disabled={!numOrNull(price) || !numOrNull(sqft)} />
-          <GhostButton title="Cancel" onPress={() => setAdding(false)} />
+          <Field label={t("compAddress")} value={addr} onChangeText={setAddr} placeholder="412 Oak St" autoFocus />
+          <Field label={t("salePrice")} value={price} onChangeText={setPrice} placeholder="950000" keyboardType="numeric" />
+          <Field label={t("squareFeet")} value={sqft} onChangeText={setSqft} placeholder="1650" keyboardType="numeric" />
+          <PrimaryButton title={t("addComp")} onPress={addComp} disabled={!numOrNull(price) || !numOrNull(sqft)} />
+          <GhostButton title={t("cancel")} onPress={() => setAdding(false)} />
         </Card>
       ) : (
         <Pressable onPress={() => setAdding(true)} style={s.addRow}>
-          <Text style={s.addRowText}>+ Add a comp by hand</Text>
+          <Text style={s.addRowText}>{t("addCompByHand")}</Text>
         </Pressable>
       )}
 
       <Divider />
       <PrimaryButton
-        title={busy ? "Running the model…" : "Get the band"}
+        title={busy ? t("runningModel") : t("getTheBand")}
         onPress={() => onRunArv(sqftValue, numOrNull(afterSqft))}
         disabled={!ready || busy}
         tone="accent"
       />
       <Text style={[type.spec, s.hint]}>
         {ready
-          ? `Your testimony: ${comps.filter((c) => c.closed).length} sold · ${comps.filter((c) => c.renovated).length} renovated, of ${comps.length}`
-          : sqftValue ? "Add at least one comp." : "Subject square feet is required."}
+          ? `${t("testimony")} ${comps.filter((c) => c.closed).length} ${t("sold")} · ${comps.filter((c) => c.renovated).length} ${t("renovatedLower")}, ${t("of")} ${comps.length}`
+          : sqftValue ? t("needOneComp") : t("needSubjectSf")}
       </Text>
     </View>
   );

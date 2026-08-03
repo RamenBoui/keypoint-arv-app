@@ -11,17 +11,17 @@ import { colors, type } from "../theme";
 
 const CONF_TONE = { high: "green", medium: "amber", low: "red" };
 
-function Column({ run, result }) {
+function Column({ t, run, result }) {
   const band = result?.band;
   const conf = result?.comp_set?.confidence ?? "low";
   return (
     <View style={s.col}>
       <Text style={type.bodyStrong} numberOfLines={2}>{run.addressText}</Text>
-      <Text style={type.spec}>{fmtInt(run.subject.square_feet)} SF · {run.comps.length} comps</Text>
+      <Text style={type.spec}>{fmtInt(run.subject.square_feet)} SF · {run.comps.length} {t("comps")}</Text>
       {!result ? (
         <ActivityIndicator color={colors.accent} style={{ marginTop: 16 }} />
       ) : !result.ok ? (
-        <Text style={[type.spec, { color: colors.amber, marginTop: 10 }]}>{result.error || "failed"}</Text>
+        <Text style={[type.spec, { color: colors.amber, marginTop: 10 }]}>{result.error || t("failed")}</Text>
       ) : (
         <View style={{ marginTop: 8 }}>
           <Text style={type.microLabel}>P50</Text>
@@ -30,10 +30,10 @@ function Column({ run, result }) {
           <View style={s.row}><Text style={s.k}>P20</Text><Text style={s.v}>{fmtMoney(band.arv?.p20)}</Text></View>
           <View style={s.row}><Text style={s.k}>P80</Text><Text style={s.v}>{fmtMoney(band.arv?.p80)}</Text></View>
           {result.breakeven && (
-            <View style={s.row}><Text style={s.k}>Breakeven</Text><Text style={s.v}>{fmtPsf(result.breakeven.breakeven_psf)}</Text></View>
+            <View style={s.row}><Text style={s.k}>{t("breakeven")}</Text><Text style={s.v}>{fmtPsf(result.breakeven.breakeven_psf)}</Text></View>
           )}
           <View style={{ marginTop: 8 }}>
-            <Pill text={`CONF: ${String(conf).toUpperCase()}`} tone={CONF_TONE[conf] ?? "red"} />
+            <Pill text={`${t("confidence")} ${String(conf).toUpperCase()}`} tone={CONF_TONE[conf] ?? "red"} />
           </View>
         </View>
       )}
@@ -41,7 +41,7 @@ function Column({ run, result }) {
   );
 }
 
-export default function CompareScreen({ onOpenRun, onBack }) {
+export default function CompareScreen({ t, onOpenRun, onBack }) {
   const all = recents();
   const [picked, setPicked] = useState([]);
   const [results, setResults] = useState(null); // [r1, r2] once running
@@ -75,30 +75,29 @@ export default function CompareScreen({ onOpenRun, onBack }) {
     const pair = picked.map((i) => all[i]);
     return (
       <View style={s.wrap}>
-        <Text style={type.screenTitle}>Side by side</Text>
+        <Text style={type.screenTitle}>{t("sideBySide")}</Text>
         <Card style={{ marginTop: 14 }}>
           <View style={s.cols}>
-            <Column run={pair[0]} result={results[0]} />
+            <Column t={t} run={pair[0]} result={results[0]} />
             <View style={s.vr} />
-            <Column run={pair[1]} result={results[1]} />
+            <Column t={t} run={pair[1]} result={results[1]} />
           </View>
         </Card>
         <Text style={[type.spec, s.note]}>
-          Same engine, same rules — differences come from each run's own comp
-          evidence, not from a ranking. Open either run to see its full answer.
+          {t("compareNote")}
         </Text>
-        <GhostButton title={`Open ${pair[0].addressText.split(",")[0]}`} onPress={() => onOpenRun(pair[0])} />
-        <GhostButton title={`Open ${pair[1].addressText.split(",")[0]}`} onPress={() => onOpenRun(pair[1])} />
-        <GhostButton title="← Pick different runs" onPress={() => setResults(null)} />
-        <GhostButton title="Done" tone="accent" onPress={onBack} />
+        <GhostButton title={`${t("open")} ${pair[0].addressText.split(",")[0]}`} onPress={() => onOpenRun(pair[0])} />
+        <GhostButton title={`${t("open")} ${pair[1].addressText.split(",")[0]}`} onPress={() => onOpenRun(pair[1])} />
+        <GhostButton title={t("pickDifferent")} onPress={() => setResults(null)} />
+        <GhostButton title={t("done")} tone="accent" onPress={onBack} />
       </View>
     );
   }
 
   return (
     <View style={s.wrap}>
-      <Text style={type.screenTitle}>Compare two</Text>
-      <Text style={[type.body, { marginTop: 6 }]}>Pick two recent runs.</Text>
+      <Text style={type.screenTitle}>{t("compareTitle")}</Text>
+      <Text style={[type.body, { marginTop: 6 }]}>{t("pickTwo")}</Text>
       <View style={{ marginTop: 12 }}>
         {all.map((r, i) => (
           <Pressable key={r.addressText} onPress={() => toggle(i)} style={[s.pickRow, picked.includes(i) && s.pickRowOn]}>
@@ -106,15 +105,15 @@ export default function CompareScreen({ onOpenRun, onBack }) {
               {picked.includes(i) ? "✓ " : ""}{r.addressText}
             </Text>
             <Text style={[type.spec, picked.includes(i) && { color: colors.onInk }]}>
-              {fmtInt(r.subject.square_feet)} SF · {r.comps.length} comps · {r.at.slice(0, 10)}
+              {fmtInt(r.subject.square_feet)} SF · {r.comps.length} {t("comps")} · {r.at.slice(0, 10)}
             </Text>
           </Pressable>
         ))}
       </View>
       <View style={{ marginTop: 14 }}>
-        <PrimaryButton title="Compare" onPress={run} disabled={picked.length !== 2} tone="accent" />
+        <PrimaryButton title={t("compare")} onPress={run} disabled={picked.length !== 2} tone="accent" />
       </View>
-      <GhostButton title="← Back" onPress={onBack} />
+      <GhostButton title={t("back")} onPress={onBack} />
     </View>
   );
 }

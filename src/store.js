@@ -28,6 +28,15 @@ export function recents() {
   return state.recents;
 }
 
+export function getLang() {
+  return state.lang === "es" ? "es" : "en";
+}
+
+export async function setLang(lang) {
+  state.lang = lang === "es" ? "es" : "en";
+  await save();
+}
+
 // One recent per address string; a re-run replaces it (flags included —
 // comp flags are user testimony and must survive relaunch).
 export function rememberRun({ addressText, address, subject, comps, deal }) {
