@@ -6,6 +6,7 @@ import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { fmtMoney, fmtMoneyFull, fmtPsf, fmtInt, numOrNull } from "../util";
 import { Card, Divider, Field, GhostButton, GroupLabel, Pill, PrimaryButton } from "../components/ui";
+import { shareReport } from "../report";
 import { colors, type } from "../theme";
 
 const CONF_TONE = { high: "green", medium: "amber", low: "red" };
@@ -141,6 +142,8 @@ export default function AnswerScreen({ run, result, busy, onRunDeal, onBack, onN
       {result.footer ? <Text style={[type.spec, s.footer]}>{result.footer}</Text> : null}
 
       <Divider />
+      <PrimaryButton title="Share as PDF" onPress={() => shareReport(run, result)} />
+      <View style={{ height: 8 }} />
       <GhostButton title="← Adjust comps" onPress={onBack} />
       <GhostButton title="New address" tone="accent" onPress={onNewAddress} />
     </View>

@@ -6,9 +6,10 @@ import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { numOrNull, fmtMoneyFull, fmtInt } from "../util";
 import { Card, Divider, Field, FlagChip, GhostButton, GroupLabel, Pill, PrimaryButton } from "../components/ui";
+import PermitsInline from "../components/PermitsInline";
 import { colors, type } from "../theme";
 
-function CompCard({ comp, onToggle, onRemove }) {
+function CompCard({ comp, fallbackCity, onToggle, onRemove }) {
   return (
     <Card style={s.compCard}>
       <View style={s.compHead}>
@@ -28,6 +29,11 @@ function CompCard({ comp, onToggle, onRemove }) {
         <FlagChip label="Sold (closed)" on={comp.closed} onToggle={() => onToggle("closed")} />
         <FlagChip label="Renovated" on={comp.renovated} onToggle={() => onToggle("renovated")} />
       </View>
+      {!!comp.address && (
+        <View style={s.permits}>
+          <PermitsInline addressText={comp.address} fallbackCity={fallbackCity} />
+        </View>
+      )}
     </Card>
   );
 }
@@ -39,6 +45,7 @@ export default function CompSetScreen({ run, onChange, onRunArv, busy }) {
   const [price, setPrice] = useState("");
   const [sqft, setSqft] = useState("");
   const [subjectSqft, setSubjectSqft] = useState(subject.square_feet ? String(subject.square_feet) : "");
+  const [afterSqft, setAfterSqft] = useState(subject.total_sf_after ? String(subject.total_sf_after) : "");
 
   const setComps = (next) => onChange({ ...run, comps: next });
 
@@ -77,17 +84,33 @@ export default function CompSetScreen({ run, onChange, onRunArv, busy }) {
       </View>
 
       <Card style={s.subjectCard}>
-        <Field
-          label="Subject square feet"
-          value={subjectSqft}
-          onChangeText={(t) => { setSubjectSqft(t); }}
-          placeholder="1800"
-          keyboardType="numeric"
-        />
+        <View style={s.sizeRow}>
+          <View style={{ flex: 1 }}>
+            <Field
+              label="Subject square feet"
+              value={subjectSqft}
+              onChangeText={(t) => { setSubjectSqft(t); }}
+              placeholder="1800"
+              keyboardType="numeric"
+            />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Field
+              label="Size once built (opt.)"
+              value={afterSqft}
+              onChangeText={setAfterSqft}
+              placeholder="adding SF?"
+              keyboardType="numeric"
+            />
+          </View>
+        </View>
         <Text style={type.body}>
           Mark what you know about each comp. Sold + renovated is the evidence the
           band stands on — unflagged comps degrade confidence, and the agent says so.
         </Text>
+        <View style={s.permits}>
+          <PermitsInline addressText={run.addressText} fallbackCity={run.address?.city} />
+        </View>
       </Card>
 
       <GroupLabel style={s.listLabel}>Comparable sales · {String(comps.length)}</GroupLabel>
@@ -95,6 +118,7 @@ export default function CompSetScreen({ run, onChange, onRunArv, busy }) {
         <CompCard
           key={`${c.id}-${i}`}
           comp={c}
+          fallbackCity={run.address?.city}
           onToggle={(flag) => setComps(comps.map((x, j) => (j === i ? { ...x, [flag]: !x[flag] } : x)))}
           onRemove={() => setComps(comps.filter((_, j) => j !== i))}
         />
@@ -117,7 +141,7 @@ export default function CompSetScreen({ run, onChange, onRunArv, busy }) {
       <Divider />
       <PrimaryButton
         title={busy ? "Running the model…" : "Get the band"}
-        onPress={() => onRunArv(sqftValue)}
+        onPress={() => onRunArv(sqftValue, numOrNull(afterSqft))}
         disabled={!ready || busy}
         tone="accent"
       />
@@ -143,4 +167,6 @@ const s = StyleSheet.create({
   addRow: { paddingVertical: 14, alignItems: "center", borderWidth: 1, borderStyle: "dashed", borderColor: colors.borderDashed, borderRadius: 12 },
   addRowText: { ...type.bodyStrong, color: colors.accent },
   hint: { marginTop: 8, textAlign: "center" },
+  sizeRow: { flexDirection: "row", gap: 10 },
+  permits: { marginTop: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, paddingTop: 8 },
 });

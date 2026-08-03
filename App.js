@@ -31,7 +31,10 @@ export default function App() {
     setError(null);
     const posture = nextRun.comps.some((c) => c.source === "enrich") ? "public_record" : "client_input";
     const r = await arvAgent({
-      subject: { square_feet: nextRun.subject.square_feet },
+      subject: {
+        square_feet: nextRun.subject.square_feet,
+        ...(nextRun.subject.total_sf_after ? { total_sf_after: nextRun.subject.total_sf_after } : {}),
+      },
       comps: nextRun.comps,
       deal: nextRun.deal ?? undefined,
       posture,
@@ -70,8 +73,8 @@ export default function App() {
             run={run}
             busy={busy}
             onChange={setRun}
-            onRunArv={(sqft) =>
-              runArv({ ...run, subject: { ...run.subject, square_feet: sqft } })}
+            onRunArv={(sqft, afterSf) =>
+              runArv({ ...run, subject: { ...run.subject, square_feet: sqft, total_sf_after: afterSf ?? null } })}
           />
         )}
         {screen === "answer" && run && result && (
