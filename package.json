@@ -16,7 +16,7 @@
   "scripts": {
     "start": "expo start",
     "web": "expo start --web",
-    "build": "EXPO_NO_TYPESCRIPT_SETUP=1 expo export --platform web"
+    "build": "EXPO_NO_TYPESCRIPT_SETUP=1 expo export --platform web && node scripts/patch-dist.js"
   },
   "private": true
 }

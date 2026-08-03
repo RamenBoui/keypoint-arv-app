@@ -1,0 +1,41 @@
+# Deploy the ARV app to GitHub Pages on every push to main.
+# The build patches asset paths to relative (scripts/patch-dist.js), so the
+# /keypoint-arv-app/ path prefix needs no baseUrl config.
+name: Deploy ARV app to GitHub Pages
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Sanity — patched, non-empty bundle
+        run: |
+          grep -q 'src="./_expo/' dist/index.html
+          test -s dist/_expo/static/js/web/*.js
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - id: deployment
+        uses: actions/deploy-pages@v4
