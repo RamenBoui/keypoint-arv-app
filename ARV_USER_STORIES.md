@@ -95,7 +95,7 @@ Status legend: ✅ built · ◐ engine live, UI pending · ⏸ needs engine/deci
 |---|---|---|---|
 | X-01 | No account, ever, for the core question (settled 2026-08-03) | Zero friction between curiosity and answer — the whole funnel | ✅ |
 | X-02 | Works on the phone browser from a shared link — no install | The app spreads by URL | ✅ |
-| X-03 | Address typo tolerance (missing commas, inline state/zip, stray spaces) | The one input everything hangs on deserves forgiveness | ✅ (autocomplete ○ — needs a places API) |
+| X-03 | Address autocomplete (Photon/OSM — free, no key, LA-biased, fail-silent) + typo tolerance | The one input everything hangs on deserves forgiveness | ✅ |
 | X-04 | Spanish (es) localization | House pattern (Field is en/es/zh); LA market reality | ○ |
 | X-05 | "Today vs after the work": as-is AVM · after-work P50 · THE GAP, on screen and in the PDF (with an honesty note when the AVM prices above the set) | The margin is the product; show it explicitly | ✅ |
 | X-06 | Buy-and-hold angle: market rent rendered beside the band and in the PDF | Widens the investor persona without new engine work | ✅ |
