@@ -1,0 +1,20 @@
+{
+  "name": "keypoint-arv-app",
+  "version": "0.1.0",
+  "main": "index.js",
+  "dependencies": {
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "expo": "~57.0.8",
+    "expo-status-bar": "~57.0.1",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.86.0",
+    "react-native-web": "^0.21.2"
+  },
+  "scripts": {
+    "start": "expo start",
+    "web": "expo start --web",
+    "build": "EXPO_NO_TYPESCRIPT_SETUP=1 expo export --platform web"
+  },
+  "private": true
+}

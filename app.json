@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "Keypoint ARV",
+    "slug": "keypoint-arv-app",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "scheme": "keypointarv",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "ai.jirf.keypointarv"
+    },
+    "android": {
+      "package": "ai.jirf.keypointarv"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}
