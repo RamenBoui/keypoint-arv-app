@@ -61,6 +61,12 @@ export const STRINGS = {
 
     // Answer screen
     posture: "posture:",
+    evidenceMls: "MLS EVIDENCE",
+    evidencePublic: "PUBLIC RECORD",
+    evidenceClient: "YOUR COMPS",
+    excludedNote: "excluded — below the set's evidence bar",
+    lockedParams: "Locked parameters",
+    dealInvite: "Purchase, build, and term — three numbers show whether the exit clears the red line.",
     sfSubject: "SF subject",
     sfOnceBuilt: "SF once built",
     arvBand: "ARV band",
@@ -243,6 +249,12 @@ export const STRINGS = {
     more: "más.",
 
     posture: "postura:",
+    evidenceMls: "EVIDENCIA MLS",
+    evidencePublic: "REGISTRO PÚBLICO",
+    evidenceClient: "SUS COMPARABLES",
+    excludedNote: "excluidos — bajo el estándar de evidencia del grupo",
+    lockedParams: "Parámetros fijados",
+    dealInvite: "Compra, obra y plazo — tres números muestran si la salida supera la línea roja.",
     sfSubject: "pies² propiedad",
     sfOnceBuilt: "pies² al construir",
     arvBand: "Rango ARV",
