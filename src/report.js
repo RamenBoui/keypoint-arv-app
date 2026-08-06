@@ -8,7 +8,7 @@
 // Web: a print window — the browser's "Save as PDF" is the share.
 import { Platform } from "react-native";
 import { makeT } from "./i18n";
-import { fmtMoney, fmtMoneyFull, fmtPsf, fmtInt } from "./util";
+import { fmtMoney, fmtMoneyFull, fmtPsf, fmtInt, todayLocalISO } from "./util";
 
 const esc = (s) =>
   String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -18,7 +18,7 @@ export function buildReportHtml(run, result, lang = "en") {
   const { band, breakeven, tiers, comp_set, basis_note, posture, footer } = result;
   const conf = comp_set?.confidence ?? "low";
   const noSold = comp_set?.evidence === "listings_or_unflagged";
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayLocalISO();
 
   const compRows = run.comps.map((c) => `
     <tr>

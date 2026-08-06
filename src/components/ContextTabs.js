@@ -11,7 +11,7 @@
 import { useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { listingDiagnostic, marketScope, marketTrends } from "../api";
-import { fmtInt, fmtMoneyFull, fmtPsf, numOrNull } from "../util";
+import { fmtInt, fmtMoneyFull, fmtPsf, localDayOf, numOrNull } from "../util";
 import { Card, Field, GhostButton, GroupLabel, Pill, PrimaryButton } from "./ui";
 import { colors, type } from "../theme";
 
@@ -191,7 +191,7 @@ function TrendsTab({ t, run, cache, setCache }) {
       </Card>
       {data.truncation_note ? <Text style={[type.spec, s.warn]}>{data.truncation_note}</Text> : null}
       <Text style={[type.spec, s.note]}>
-        {data.jurisdiction} · {data.area?.window_days} {t("days")} · {t("live")} {data.source?.fetched_at?.slice(0, 10)} · {data.note}
+        {data.jurisdiction} · {data.area?.window_days} {t("days")} · {t("live")} {data.source?.fetched_at ? localDayOf(data.source.fetched_at) : "—"} · {data.note}
       </Text>
     </View>
   );

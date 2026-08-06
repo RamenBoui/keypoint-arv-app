@@ -5,7 +5,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-nati
 import { enrich } from "../api";
 import { recents } from "../store";
 import { suggestAddresses } from "../suggest";
-import { parseAddress } from "../util";
+import { localDayOf, parseAddress } from "../util";
 import { Card, Field, GroupLabel, PrimaryButton } from "../components/ui";
 import { colors, type } from "../theme";
 
@@ -122,7 +122,7 @@ export default function AddressScreen({ t, onSubject, onRestoreRun, onCompare })
           {recent.map((r) => (
             <Pressable key={r.addressText} onPress={() => onRestoreRun(r)} style={({ pressed }) => [s.recentRow, pressed && { opacity: 0.6 }]}>
               <Text style={type.bodyStrong} numberOfLines={1}>{r.addressText}</Text>
-              <Text style={type.date}>{r.at.slice(0, 10)}</Text>
+              <Text style={type.date}>{localDayOf(r.at)}</Text>
             </Pressable>
           ))}
         </View>

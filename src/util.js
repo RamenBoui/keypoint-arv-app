@@ -52,3 +52,12 @@ export const numOrNull = (s) => {
   const n = parseFloat(String(s).replace(/[$,]/g, ""));
   return isFinite(n) && n > 0 ? n : null;
 };
+
+// Calendar days in the user's own timezone — ISO timestamps are UTC and
+// read a day ahead every evening west of Greenwich.
+const dayFmt = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+export const todayLocalISO = () => dayFmt(new Date());
+export function localDayOf(iso) {
+  const d = new Date(iso);
+  return isFinite(d) ? dayFmt(d) : "—";
+}

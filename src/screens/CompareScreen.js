@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { arvAgent } from "../api";
 import { recents } from "../store";
-import { fmtInt, fmtMoney, fmtPsf } from "../util";
+import { fmtInt, fmtMoney, fmtPsf, localDayOf } from "../util";
 import { Card, GhostButton, GroupLabel, Pill, PrimaryButton } from "../components/ui";
 import { colors, type } from "../theme";
 
@@ -105,7 +105,7 @@ export default function CompareScreen({ t, onOpenRun, onBack }) {
               {picked.includes(i) ? "✓ " : ""}{r.addressText}
             </Text>
             <Text style={[type.spec, picked.includes(i) && { color: colors.onInk }]}>
-              {fmtInt(r.subject.square_feet)} SF · {r.comps.length} {t("comps")} · {r.at.slice(0, 10)}
+              {fmtInt(r.subject.square_feet)} SF · {r.comps.length} {t("comps")} · {localDayOf(r.at)}
             </Text>
           </Pressable>
         ))}
