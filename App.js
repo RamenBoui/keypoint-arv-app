@@ -7,7 +7,9 @@ import { Platform, Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, T
 import { arvAgent } from "./src/api";
 import { makeT } from "./src/i18n";
 import { takeSharedRun } from "./src/share";
+import { DEMO_RUNS, takePreviewScreen } from "./src/preview";
 import { getLang, load, rememberRun, setLang } from "./src/store";
+import { todayLocalISO } from "./src/util";
 import { colors, ensureFontsWeb, type } from "./src/theme";
 import AddressScreen from "./src/screens/AddressScreen";
 import CompSetScreen from "./src/screens/CompSetScreen";
@@ -78,6 +80,22 @@ export default function App() {
       if (shared) {
         setRun(shared);
         setScreen("comps");
+        return;
+      }
+      // Preview deep-link (#screen=…): land on one screen with demo data so
+      // a harness page can show the whole app at once. Demo runs are seeded
+      // into recents so Compare has something to compare.
+      const preview = takePreviewScreen();
+      if (preview) {
+        DEMO_RUNS.forEach((r) => rememberRun(r));
+        if (preview === "compare") {
+          setScreen("compare");
+        } else if (preview === "comps") {
+          setRun(DEMO_RUNS[0]);
+          setScreen("comps");
+        } else if (preview === "answer") {
+          runArv(DEMO_RUNS[0]);
+        }
       }
     });
   }, []);
@@ -129,7 +147,7 @@ export default function App() {
               </Pressable>
             ))}
           </View>
-          <Text style={type.date}>{new Date().toISOString().slice(0, 10)}</Text>
+          <Text style={type.date}>{todayLocalISO()}</Text>
         </View>
       </View>
       <ScrollView ref={scroller} style={s.body} contentContainerStyle={s.bodyContent} keyboardShouldPersistTaps="handled">
