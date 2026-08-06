@@ -18,6 +18,9 @@ const strip = (run) => ({
     cl: c.closed ? 1 : 0, rn: c.renovated ? 1 : 0, d: c.date ?? null, src: c.source ?? null,
   })),
   d: run.deal ?? null,
+  // §03 ceiling rides only when set — links without it stay byte-identical
+  // to the ones already in the wild.
+  ...(typeof run.ceiling_pct === "number" && run.ceiling_pct > 0 ? { pi: run.ceiling_pct } : {}),
 });
 
 const expand = (x) => ({
@@ -34,6 +37,7 @@ const expand = (x) => ({
     closed: c.cl === 1, renovated: c.rn === 1, date: c.d ?? null, source: c.src ?? null,
   })),
   deal: x.d ?? null,
+  ceiling_pct: typeof x.pi === "number" && x.pi > 0 ? x.pi : null,
   enriched: (x.c ?? []).some((c) => c.src === "enrich"),
 });
 

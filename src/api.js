@@ -61,7 +61,7 @@ export async function enrich(address) {
 // re-run on every flag change. Posture is derived HERE, at the engine door:
 // any enrich-sourced comp makes the evidence public_record; a fully
 // hand-entered set is client_input.
-export function arvAgent({ subject, comps, deal }) {
+export function arvAgent({ subject, comps, deal, ceiling_pct }) {
   const body = {
     subject,
     comps: comps.map((c) => ({
@@ -74,6 +74,9 @@ export function arvAgent({ subject, comps, deal }) {
     posture: comps.some((c) => c.source === "enrich") ? "public_record" : "client_input",
   };
   if (deal) body.deal = deal;
+  // §03 permanent-inferiority ceiling — rides only when the user set one, so
+  // a run without it sends the exact body it always has.
+  if (typeof ceiling_pct === "number" && ceiling_pct > 0) body.permanent_inferiority_pct = ceiling_pct;
   return call("arv-agent", body);
 }
 

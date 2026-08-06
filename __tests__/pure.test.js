@@ -81,6 +81,51 @@ describe("share link — testimony survives the URL", () => {
     global.location.hash = "#run=aGVsbG8"; // valid b64 of "hello", invalid run
     expect(shareMod.takeSharedRun()).toBeNull();
   });
+
+  test("§03 ceiling rides the link only when set — old links unchanged", () => {
+    global.location = { origin: "https://x.test", pathname: "/app/", search: "", hash: "" };
+    global.history = { replaceState: () => {} };
+
+    // Without a ceiling the fragment carries NO pi key at all — a run shared
+    // yesterday and one shared today encode byte-identically.
+    const plainUrl = shareMod.shareUrl(RUN);
+    const dec = (u) => JSON.parse(decodeURIComponent(escape(atob(u.split("#run=")[1].replace(/-/g, "+").replace(/_/g, "/")))));
+    expect("pi" in dec(plainUrl)).toBe(false);
+    global.location.hash = "#" + plainUrl.split("#")[1];
+    expect(shareMod.takeSharedRun().ceiling_pct).toBeNull(); // old-link shape → null, never undefined
+
+    // With a ceiling it round-trips as the fraction the engine takes.
+    const capped = { ...RUN, ceiling_pct: 0.15 };
+    global.location.hash = "#" + shareMod.shareUrl(capped).split("#")[1];
+    expect(shareMod.takeSharedRun().ceiling_pct).toBe(0.15);
+  });
+});
+
+describe("arv-agent body — §03 ceiling is strictly additive", () => {
+  const { arvAgent } = require("../src/api");
+  const COMPS = [{ id: "A", sale_price: 1, square_feet: 1, closed: true, renovated: false, source: null }];
+  let sent;
+  beforeEach(() => {
+    sent = null;
+    global.fetch = jest.fn(async (url, opts) => {
+      sent = JSON.parse(opts.body);
+      return { ok: true, status: 200, json: async () => ({ ok: true }) };
+    });
+  });
+
+  test("unset → the body has no permanent_inferiority_pct key", async () => {
+    await arvAgent({ subject: { square_feet: 1000 }, comps: COMPS });
+    expect("permanent_inferiority_pct" in sent).toBe(false);
+    await arvAgent({ subject: { square_feet: 1000 }, comps: COMPS, ceiling_pct: null });
+    expect("permanent_inferiority_pct" in sent).toBe(false);
+    await arvAgent({ subject: { square_feet: 1000 }, comps: COMPS, ceiling_pct: 0 });
+    expect("permanent_inferiority_pct" in sent).toBe(false);
+  });
+
+  test("set → rides top-level as the contract-pinned fraction", async () => {
+    await arvAgent({ subject: { square_feet: 1000 }, comps: COMPS, ceiling_pct: 0.15 });
+    expect(sent.permanent_inferiority_pct).toBe(0.15);
+  });
 });
 
 describe("report HTML — the deliverable is the defense", () => {
@@ -130,6 +175,16 @@ describe("report HTML — the deliverable is the defense", () => {
     expect(html).toContain("Ventas comparables — la evidencia");
     expect(html).toContain("✓ vendido");
     expect(html).toContain("P50 exit clears breakeven — cushion visible"); // engine text stays verbatim
+  });
+
+  test("§03 ceiling prints only when it was set AND the engine applied it", () => {
+    expect(buildReportHtml(RUN, RESULT)).not.toContain("§03"); // no ceiling → identical report to before
+    const cappedRun = { ...RUN, ceiling_pct: 0.15 };
+    const cappedResult = { ...RESULT, band: { ...RESULT.band, ceiling_applied: true } };
+    const html = buildReportHtml(cappedRun, cappedResult);
+    expect(html).toContain("§03 ceiling applied — exit $/SF capped");
+    expect(html).toContain("−15%");
+    expect(html).toContain("15% §03 ceiling"); // the deal note line carries it too
   });
 });
 

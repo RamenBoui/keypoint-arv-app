@@ -13,7 +13,7 @@ import { colors, type } from "../theme";
 
 const CONF_TONE = { high: "green", medium: "amber", low: "red" };
 
-function BandCard({ t, band, compSet, basisNote, totalComps }) {
+function BandCard({ t, band, compSet, basisNote, totalComps, ceilingPct }) {
   const conf = compSet?.confidence ?? "low";
   const noSold = compSet && compSet.evidence === "listings_or_unflagged";
   return (
@@ -47,6 +47,11 @@ function BandCard({ t, band, compSet, basisNote, totalComps }) {
       {compSet?.excluded?.length ? (
         <Text style={[type.spec, { color: colors.amber, marginTop: 6 }]}>
           {compSet.excluded.length} {t("excludedNote")}
+        </Text>
+      ) : null}
+      {band.ceiling_applied && ceilingPct ? (
+        <Text style={[type.spec, { color: colors.amber, marginTop: 6 }]}>
+          {t("ceilingApplied")} −{Math.round(ceilingPct * 100)}%
         </Text>
       ) : null}
       {noSold && (
@@ -107,7 +112,7 @@ function TodayVsAfter({ t, subject, band }) {
 // distance between breakeven and what the market has proven — so it gets the
 // band's own visual grammar (big toned center, quiet sides) and the verdict
 // renders VERBATIM on a toned strip. One color carries the whole card.
-function BreakevenCard({ t, breakeven, deal, onEdit }) {
+function BreakevenCard({ t, breakeven, deal, ceilingPct, onEdit }) {
   const under = typeof breakeven.verdict === "string" && breakeven.verdict.includes("UNDER");
   const tone = under ? colors.red : colors.green;
   const pct = typeof breakeven.cushion_pct_vs === "number" ? breakeven.cushion_pct_vs * 100 : null;
@@ -137,20 +142,31 @@ function BreakevenCard({ t, breakeven, deal, onEdit }) {
       </View>
       <Text style={[type.spec, s.note]}>
         {fmtMoneyFull(deal.purchase_price)} {t("purchase")} · {fmtMoneyFull(deal.build_cost)} {t("build")} · {deal.term_months} {t("mo")}
+        {ceilingPct ? ` · −${Math.round(ceilingPct * 100)}% ${t("ceilingShort")}` : ""}
       </Text>
       <GhostButton title={t("editDeal")} onPress={onEdit} />
     </Card>
   );
 }
 
-function DealForm({ t, initial, onRun, busy }) {
+function DealForm({ t, initial, initialCeiling, onRun, busy }) {
   const [purchase, setPurchase] = useState(initial?.purchase_price ? String(initial.purchase_price) : "");
   const [build, setBuild] = useState(initial?.build_cost ? String(initial.build_cost) : "");
   const [term, setTerm] = useState(initial?.term_months ? String(initial.term_months) : "6");
+  const [ceiling, setCeiling] = useState(
+    typeof initialCeiling === "number" && initialCeiling > 0 ? String(Math.round(initialCeiling * 100)) : ""
+  );
   const p = numOrNull(purchase);
   const b = parseFloat(String(build).replace(/[$,]/g, ""));
   const tm = numOrNull(term);
-  const ok = p && tm && isFinite(b) && b >= 0;
+  // §03 ceiling — optional; whole percent in, fraction to the engine (15 →
+  // 0.15, contract caps at 0.5). Blank means no ceiling, exactly as before.
+  const cRaw = String(ceiling).replace(/%/g, "").trim();
+  const cNum = parseFloat(cRaw);
+  const cOk = cRaw === "" || (isFinite(cNum) && cNum >= 0 && cNum <= 50);
+  const cFrac = cOk && cRaw !== "" && cNum > 0 ? cNum / 100 : null;
+  const ok = p && tm && isFinite(b) && b >= 0 && cOk;
+  const submit = () => onRun({ purchase_price: p, build_cost: b, term_months: tm }, cFrac);
   return (
     <Card style={[s.beCard, s.dealInviteCard]}>
       <GroupLabel style={{ color: colors.accent }}>{t("seeTheCushion")}</GroupLabel>
@@ -163,11 +179,20 @@ function DealForm({ t, initial, onRun, busy }) {
         onChangeText={setTerm}
         placeholder="6"
         keyboardType="numeric"
-        onSubmitEditing={() => { if (ok && !busy) onRun({ purchase_price: p, build_cost: b, term_months: tm }); }}
+        onSubmitEditing={() => { if (ok && !busy) submit(); }}
       />
+      <Field
+        label={t("ceilingPct")}
+        value={ceiling}
+        onChangeText={setCeiling}
+        placeholder="15"
+        keyboardType="numeric"
+        onSubmitEditing={() => { if (ok && !busy) submit(); }}
+      />
+      <Text style={[type.spec, s.ceilingHint]}>{t("ceilingHint")}</Text>
       <PrimaryButton
         title={busy ? t("running") : t("showBreakeven")}
-        onPress={() => onRun({ purchase_price: p, build_cost: b, term_months: tm })}
+        onPress={submit}
         disabled={!ok || busy}
       />
     </Card>
@@ -197,17 +222,18 @@ export default function AnswerScreen({ t, lang, run, result, busy, onRunDeal, on
         </Text>
       </View>
 
-      <BandCard t={t} band={band} compSet={comp_set} basisNote={basis_note} totalComps={run.comps?.length} />
+      <BandCard t={t} band={band} compSet={comp_set} basisNote={basis_note} totalComps={run.comps?.length} ceilingPct={run.ceiling_pct} />
       <TodayVsAfter t={t} subject={run.subject} band={band} />
 
       {breakeven && !editingDeal ? (
-        <BreakevenCard t={t} breakeven={breakeven} deal={run.deal} onEdit={() => setEditingDeal(true)} />
+        <BreakevenCard t={t} breakeven={breakeven} deal={run.deal} ceilingPct={run.ceiling_pct} onEdit={() => setEditingDeal(true)} />
       ) : (
         <DealForm
           t={t}
           initial={run.deal}
+          initialCeiling={run.ceiling_pct}
           busy={busy}
-          onRun={(deal) => { setEditingDeal(false); onRunDeal(deal); }}
+          onRun={(deal, cpct) => { setEditingDeal(false); onRunDeal(deal, cpct); }}
         />
       )}
 
@@ -288,6 +314,7 @@ const s = StyleSheet.create({
   verdictStrip: { marginTop: 10, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8 },
   verdictText: { ...type.bodyStrong, fontSize: 15 },
   dealInviteCard: { borderColor: colors.accent, borderWidth: 1 },
+  ceilingHint: { marginTop: -6, marginBottom: 12, color: colors.textMuted },
   paramsToggle: { color: colors.textMuted, marginTop: 12, textAlign: "center" },
   tierRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 8, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
   tierCode: { ...type.projectCode, width: 26 },

@@ -39,9 +39,14 @@ export async function setLang(lang) {
 
 // One recent per address string; a re-run replaces it (flags included —
 // comp flags are user testimony and must survive relaunch).
-export function rememberRun({ addressText, address, subject, comps, deal }) {
+export function rememberRun({ addressText, address, subject, comps, deal, ceiling_pct }) {
   state.recents = [
-    { addressText, address, subject, comps, deal: deal ?? null, at: new Date().toISOString() },
+    {
+      addressText, address, subject, comps, deal: deal ?? null,
+      // §03 ceiling persists only when set — unset runs keep the old shape.
+      ...(typeof ceiling_pct === "number" && ceiling_pct > 0 ? { ceiling_pct } : {}),
+      at: new Date().toISOString(),
+    },
     ...state.recents.filter((r) => r.addressText !== addressText),
   ].slice(0, MAX_RECENTS);
   save();

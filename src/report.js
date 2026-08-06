@@ -81,6 +81,7 @@ export function buildReportHtml(run, result, lang = "en") {
   ${comp_set ? `<span class="meta"> · ${comp_set.used} ${t("pdfCompsUsed")}</span>` : ""}
   ${noSold ? `<div class="scream">${t("noneSoldScream")}</div>` : ""}
   <div class="note">${esc(comp_set?.note ?? basis_note ?? "")}</div>
+  ${band?.ceiling_applied && run.ceiling_pct ? `<div class="note">${t("ceilingApplied")} −${Math.round(run.ceiling_pct * 100)}%</div>` : ""}
   ${run.subject.asIsAvm ? `<div class="note">${t("pdfAsIs")} <b>${esc(fmtMoney(run.subject.asIsAvm))}</b>${band?.arv?.p50 ? ` · ${t("pdfAfterWork")} <b>${esc(fmtMoney(band.arv.p50))}</b> · ${t("pdfTheGap")} <b>${band.arv.p50 - run.subject.asIsAvm >= 0 ? "+" : "−"}${esc(fmtMoney(Math.abs(band.arv.p50 - run.subject.asIsAvm)))}</b>` : ""}${run.subject.marketRent ? ` · ${t("pdfMarketRent")} ${esc(fmtMoneyFull(run.subject.marketRent))}/mo` : ""}</div>` : ""}
 
   ${breakeven ? `
@@ -91,7 +92,7 @@ export function buildReportHtml(run, result, lang = "en") {
     ${typeof breakeven.cushion_pct_vs === "number" ? `<div class="cell"><div class="lbl">${t("pdfCushion")}</div><div class="money">${(breakeven.cushion_pct_vs * 100).toFixed(1)}%</div></div>` : ""}
   </div>
   <div class="verdict ${String(breakeven.verdict).includes("UNDER") ? "under" : "clear"}">${esc(breakeven.verdict)}</div>
-  <div class="note">${esc(fmtMoneyFull(run.deal?.purchase_price))} ${t("purchase")} · ${esc(fmtMoneyFull(run.deal?.build_cost))} ${t("build")} · ${esc(run.deal?.term_months)} ${t("mo")}</div>` : ""}
+  <div class="note">${esc(fmtMoneyFull(run.deal?.purchase_price))} ${t("purchase")} · ${esc(fmtMoneyFull(run.deal?.build_cost))} ${t("build")} · ${esc(run.deal?.term_months)} ${t("mo")}${run.ceiling_pct ? ` · −${Math.round(run.ceiling_pct * 100)}% ${t("ceilingShort")}` : ""}</div>` : ""}
 
   <h2>${t("pdfCompsH")}</h2>
   <table>

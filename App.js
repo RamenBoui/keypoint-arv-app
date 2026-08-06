@@ -48,6 +48,7 @@ export default function App() {
         },
         comps: run.comps,
         deal: run.deal ?? undefined,
+        ceiling_pct: run.ceiling_pct ?? undefined,
       }).catch(() => ({ ok: false, error: "network" }));
       setBusy(false);
       if (r.ok) {
@@ -112,6 +113,7 @@ export default function App() {
       },
       comps: nextRun.comps,
       deal: nextRun.deal ?? undefined,
+      ceiling_pct: nextRun.ceiling_pct ?? undefined,
     }).catch(() => ({ ok: false, error: "network" }));
     setBusy(false);
     if (!r.ok) {
@@ -181,7 +183,7 @@ export default function App() {
             run={run}
             result={result}
             busy={busy}
-            onRunDeal={(deal) => runArv({ ...run, deal })}
+            onRunDeal={(deal, ceiling_pct) => runArv({ ...run, deal, ceiling_pct: ceiling_pct ?? null })}
             onBack={() => setScreen("comps")}
             onNewAddress={() => { setRun(null); setResult(null); setScreen("address"); }}
           />
