@@ -99,6 +99,28 @@ describe("share link — testimony survives the URL", () => {
     global.location.hash = "#" + shareMod.shareUrl(capped).split("#")[1];
     expect(shareMod.takeSharedRun().ceiling_pct).toBe(0.15);
   });
+
+  test("flag provenance rides the link only when present", () => {
+    global.location = { origin: "https://x.test", pathname: "/app/", search: "", hash: "" };
+    global.history = { replaceState: () => {} };
+    const dec = (u) => JSON.parse(decodeURIComponent(escape(atob(u.split("#run=")[1].replace(/-/g, "+").replace(/_/g, "/")))));
+
+    // Plain comps encode with NO provenance keys — old links stay identical.
+    expect(Object.keys(dec(shareMod.shareUrl(RUN)).c[0])).not.toEqual(expect.arrayContaining(["cs", "sd", "ls"]));
+
+    const withProv = {
+      ...RUN,
+      comps: [
+        { ...RUN.comps[0], closed_source: "public_record", sold_date: "2026-05-01" },
+        { ...RUN.comps[1], closed: false, likely_sold: true },
+      ],
+    };
+    global.location.hash = "#" + shareMod.shareUrl(withProv).split("#")[1];
+    const restored = shareMod.takeSharedRun();
+    expect(restored.comps[0].closed_source).toBe("public_record");
+    expect(restored.comps[0].sold_date).toBe("2026-05-01");
+    expect(restored.comps[1].likely_sold).toBe(true);
+  });
 });
 
 describe("arv-agent body — §03 ceiling is strictly additive", () => {
@@ -125,6 +147,42 @@ describe("arv-agent body — §03 ceiling is strictly additive", () => {
   test("set → rides top-level as the contract-pinned fraction", async () => {
     await arvAgent({ subject: { square_feet: 1000 }, comps: COMPS, ceiling_pct: 0.15 });
     expect(sent.permanent_inferiority_pct).toBe(0.15);
+  });
+});
+
+describe("enrich mapping — flag provenance (the §05 public-record path)", () => {
+  const { enrich } = require("../src/api");
+  const FIELDS = {
+    physical: { sqft: 1500 },
+    comps: [
+      // deed-verified: closed auto-true, recorded price beats asking
+      { address: "1 Verified St", price: 900000, sqft: 1500, sold_verified: true, sold_date: "2026-05-01", sold_price: 880000, listing_status: "Inactive", removed_date: "2026-04-20" },
+      // removed listing, no deed yet: a SUGGESTION, closed stays false
+      { address: "2 Likely Ave", price: 800000, sqft: 1400, listing_status: "Inactive", removed_date: "2026-07-10" },
+      // active listing: nothing assumed
+      { address: "3 Active Rd", price: 700000, sqft: 1300, listing_status: "Active" },
+    ],
+  };
+  beforeEach(() => {
+    global.fetch = jest.fn(async () => ({ ok: true, status: 200, json: async () => ({ fields: FIELDS, address: "x" }) }));
+  });
+
+  test("verified → closed with public-record provenance and recorded price", async () => {
+    const r = await enrich({ line: "x", city: "y" });
+    const [v, l, a] = r.candidates;
+    expect(v.closed).toBe(true);
+    expect(v.closed_source).toBe("public_record");
+    expect(v.sold_date).toBe("2026-05-01");
+    expect(v.sale_price).toBe(880000); // recorded, not asking
+    expect(v.likely_sold).toBe(false);
+
+    expect(l.closed).toBe(false); // suggestion only — never assumed
+    expect(l.closed_source).toBeNull();
+    expect(l.likely_sold).toBe(true);
+    expect(l.sale_price).toBe(800000);
+
+    expect(a.closed).toBe(false);
+    expect(a.likely_sold).toBe(false);
   });
 });
 
@@ -175,6 +233,19 @@ describe("report HTML — the deliverable is the defense", () => {
     expect(html).toContain("Ventas comparables — la evidencia");
     expect(html).toContain("✓ vendido");
     expect(html).toContain("P50 exit clears breakeven — cushion visible"); // engine text stays verbatim
+  });
+
+  test("deed-verified comps carry the (record) mark; testimony does not", () => {
+    const withProv = {
+      ...RUN,
+      comps: [
+        { id: "A", address: "337 N Spaulding", sale_price: 2200000, square_feet: 5148, closed: true, renovated: true, closed_source: "public_record" },
+        { id: "B", address: "358 N Ogden", sale_price: 1750000, square_feet: 5486, closed: true, renovated: false },
+      ],
+    };
+    const html = buildReportHtml(withProv, RESULT);
+    expect(html).toContain("✓ sold (record)");
+    expect((html.match(/✓ sold \(record\)/g) ?? []).length).toBe(1); // testimony comp stays unmarked
   });
 
   test("§03 ceiling prints only when it was set AND the engine applied it", () => {

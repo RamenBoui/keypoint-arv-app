@@ -22,8 +22,11 @@ export async function call(fn, body) {
 
 // Subject facts + candidate comps. Address is an OBJECT, not a string.
 // Read paths are contract-pinned: fields.physical.*, fields.valuation.*,
-// fields.comps[]. Candidates carry no closed/renovated truth — the user
-// flags them (the curation step).
+// fields.comps[]. Flag provenance (2026-08-06, Jeffrey — the §05 public-
+// record path): a deed-verified sale arrives as closed:true with
+// closed_source "public_record" and the RECORDED price replacing asking;
+// an Inactive/removed listing arrives as likely_sold — a SUGGESTION the
+// user confirms. Everything else stays user testimony, never assumed.
 export async function enrich(address) {
   const r = await call("aipro-enrich", { address });
   if (!r.ok || !r.fields) return { ok: false, status: r.status, error: r.error };
@@ -43,13 +46,16 @@ export async function enrich(address) {
       .map((c, i) => ({
         id: c.address || `candidate #${i + 1}`,
         address: c.address || "",
-        sale_price: c.price,
+        sale_price: c.sold_price ?? c.price, // recorded price beats asking
         square_feet: c.sqft,
         beds: c.beds ?? null,
         baths: c.baths ?? null,
         distanceMi: c.distanceMi ?? null,
         date: c.date ?? null,
-        closed: false, // user testimony only — never assumed
+        closed: c.sold_verified === true, // deed-verified only; still editable
+        closed_source: c.sold_verified === true ? "public_record" : null,
+        sold_date: c.sold_date ?? null,
+        likely_sold: c.sold_verified !== true && (c.listing_status === "Inactive" || !!c.removed_date),
         renovated: false,
         included: true,
         source: "enrich",

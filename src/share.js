@@ -16,6 +16,10 @@ const strip = (run) => ({
   c: run.comps.map((c) => ({
     id: c.id, ad: c.address, p: c.sale_price, sf: c.square_feet,
     cl: c.closed ? 1 : 0, rn: c.renovated ? 1 : 0, d: c.date ?? null, src: c.source ?? null,
+    // provenance rides only when present — links without it stay byte-identical
+    ...(c.closed_source ? { cs: c.closed_source } : {}),
+    ...(c.sold_date ? { sd: c.sold_date } : {}),
+    ...(c.likely_sold ? { ls: 1 } : {}),
   })),
   d: run.deal ?? null,
   // §03 ceiling rides only when set — links without it stay byte-identical
@@ -35,6 +39,7 @@ const expand = (x) => ({
   comps: (x.c ?? []).map((c) => ({
     id: c.id, address: c.ad ?? "", sale_price: c.p, square_feet: c.sf,
     closed: c.cl === 1, renovated: c.rn === 1, date: c.d ?? null, source: c.src ?? null,
+    closed_source: c.cs ?? null, sold_date: c.sd ?? null, likely_sold: c.ls === 1,
   })),
   deal: x.d ?? null,
   ceiling_pct: typeof x.pi === "number" && x.pi > 0 ? x.pi : null,

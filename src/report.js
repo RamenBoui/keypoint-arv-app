@@ -26,7 +26,7 @@ export function buildReportHtml(run, result, lang = "en") {
       <td class="num">${esc(fmtMoneyFull(c.sale_price))}</td>
       <td class="num">${esc(fmtInt(c.square_feet))}</td>
       <td class="num">${esc(fmtPsf(c.sale_price / c.square_feet))}</td>
-      <td class="flag">${c.closed ? t("pdfSoldFlag") : "—"}</td>
+      <td class="flag">${c.closed ? t("pdfSoldFlag") + (c.closed_source === "public_record" ? t("pdfRecordMark") : "") : "—"}</td>
       <td class="flag">${c.renovated ? t("pdfRenovatedFlag") : "—"}</td>
     </tr>`).join("");
 

@@ -11,6 +11,15 @@ export function fmtMoneyFull(n) {
   return `$${Math.round(n).toLocaleString("en-US")}`;
 }
 
+// Compact form for flanking figures (P20/P80): the hero keeps full dollars
+// (precision reads as credibility), the flanks drop to $907K so digit-noise
+// doesn't compete with it.
+export function fmtMoneyK(n) {
+  if (n === null || n === undefined || !isFinite(n)) return "—";
+  if (Math.abs(n) >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`;
+  return `$${Math.round(n / 1000)}K`;
+}
+
 export function fmtPsf(n) {
   if (n === null || n === undefined || !isFinite(n)) return "—";
   return `$${Math.round(n)}/SF`;

@@ -29,6 +29,17 @@ function CompCard({ t, comp, fallbackCity, onToggle, onRemove }) {
         <FlagChip label={t("soldClosed")} on={comp.closed} onToggle={() => onToggle("closed")} />
         <FlagChip label={t("renovated")} on={comp.renovated} onToggle={() => onToggle("renovated")} />
       </View>
+      {/* Flag provenance: deed-verified reads as evidence (green), a removed
+          listing reads as a suggestion (amber) until the user confirms. */}
+      {comp.closed && comp.closed_source === "public_record" ? (
+        <Text style={[type.spec, s.provenance, { color: colors.green }]}>
+          ✓ {t("recordVerified")}{comp.sold_date ? ` · ${comp.sold_date}` : ""}
+        </Text>
+      ) : !comp.closed && comp.likely_sold ? (
+        <Text style={[type.spec, s.provenance, { color: colors.amber }]}>
+          {t("likelySold")}
+        </Text>
+      ) : null}
       {!!comp.address && (
         <View style={s.permits}>
           <PermitsInline t={t} addressText={comp.address} fallbackCity={fallbackCity} />
@@ -176,6 +187,7 @@ const s = StyleSheet.create({
   remove: { ...type.bodyStrong, color: colors.textMuted, fontSize: 16, padding: 4 },
   specLine: { marginTop: 2, marginBottom: 10 },
   flagRow: { flexDirection: "row", gap: 8 },
+  provenance: { marginTop: 8 },
   addRow: { paddingVertical: 14, alignItems: "center", borderWidth: 1, borderStyle: "dashed", borderColor: colors.borderDashed, borderRadius: 12 },
   addRowText: { ...type.bodyStrong, color: colors.accent },
   hint: { marginTop: 8, textAlign: "center" },
