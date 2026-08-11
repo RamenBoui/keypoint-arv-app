@@ -295,8 +295,10 @@ export default function AnswerScreen({ t, lang, run, result, busy, onRunDeal, on
         </>
       )}
       <View style={{ height: 8 }} />
-      <GhostButton title={t("adjustComps")} onPress={onBack} />
-      <GhostButton title={t("newAddress")} tone="accent" onPress={onNewAddress} />
+      <View style={s.navRow}>
+        <View style={{ flex: 1 }}><GhostButton title={t("adjustComps")} onPress={onBack} /></View>
+        <View style={{ flex: 1 }}><GhostButton title={t("newAddress")} tone="accent" onPress={onNewAddress} /></View>
+      </View>
     </View>
   );
 }
@@ -336,4 +338,5 @@ const s = StyleSheet.create({
   tierPsf: { ...type.rowAmount, width: 74, textAlign: "right" },
   tierMoney: { ...type.rowAmount, width: 74, textAlign: "right" },
   footer: { marginTop: 12, textAlign: "center" },
+  navRow: { flexDirection: "row", gap: 8 },
 });

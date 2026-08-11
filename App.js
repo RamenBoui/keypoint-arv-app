@@ -5,12 +5,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Platform, Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
 import { arvAgent } from "./src/api";
-import { makeT } from "./src/i18n";
+import { LANGS, makeT } from "./src/i18n";
 import { takeSharedRun } from "./src/share";
 import { DEMO_RUNS, takePreviewScreen } from "./src/preview";
-import { getLang, load, rememberRun, setLang } from "./src/store";
+import { getLang, load, onExternalLangChange, rememberRun, setLang } from "./src/store";
 import { todayLocalISO } from "./src/util";
-import { colors, ensureFontsWeb, type } from "./src/theme";
+import { colors, ensureFontsWeb, radius, type } from "./src/theme";
 import AddressScreen from "./src/screens/AddressScreen";
 import CompSetScreen from "./src/screens/CompSetScreen";
 import CompareScreen from "./src/screens/CompareScreen";
@@ -68,6 +68,10 @@ export default function App() {
   useEffect(() => {
     scroller.current?.scrollTo?.({ y: 0, animated: false });
   }, [screen, error]);
+
+  // A language picked in any other same-origin instance (second tab, harness
+  // pane) applies here live — the toggle is one control for the whole app.
+  useEffect(() => onExternalLangChange(setLangState), []);
 
   useEffect(() => {
     ensureFontsWeb();
@@ -143,9 +147,9 @@ export default function App() {
         </View>
         <View style={s.headerRight}>
           <View style={s.langRow}>
-            {["en", "es"].map((l) => (
-              <Pressable key={l} onPress={() => { setLangState(l); setLang(l); }} hitSlop={8}>
-                <Text style={[s.langOpt, lang === l && s.langOptOn]}>{l.toUpperCase()}</Text>
+            {LANGS.map((l) => (
+              <Pressable key={l} onPress={() => { setLangState(l); setLang(l); }} hitSlop={6} style={[s.langChip, lang === l && s.langChipOn]}>
+                <Text style={[s.langOpt, lang === l && s.langOptOn]}>{l === "zh" ? "中文" : l.toUpperCase()}</Text>
               </Pressable>
             ))}
           </View>
@@ -225,9 +229,18 @@ const s = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   headerRight: { flexDirection: "row", alignItems: "center", gap: 12 },
-  langRow: { flexDirection: "row", gap: 6 },
+  langRow: { flexDirection: "row", gap: 5 },
+  langChip: {
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.card,
+  },
+  langChipOn: { backgroundColor: colors.ink, borderColor: colors.ink },
   langOpt: { ...type.brandLockup, color: colors.textMuted },
-  langOptOn: { color: colors.accent },
+  langOptOn: { color: colors.onInk },
   body: { flex: 1 },
   bodyContent: { maxWidth: 560, width: "100%", alignSelf: "center", paddingBottom: 40 },
   error: {

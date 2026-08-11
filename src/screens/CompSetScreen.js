@@ -2,14 +2,15 @@
 // truth; the USER flags them (user testimony, the difference between
 // postures). The app counts nothing and prices nothing: flags go to
 // arv-agent, which owns the evidence hierarchy.
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { numOrNull, fmtMoneyFull, fmtInt } from "../util";
 import { Card, Field, FlagChip, GhostButton, GroupLabel, Pill, PrimaryButton } from "../components/ui";
 import PermitsInline from "../components/PermitsInline";
+import { remodelHint } from "../permitHints";
 import { colors, type } from "../theme";
 
-function CompCard({ t, comp, fallbackCity, onToggle, onRemove }) {
+function CompCard({ t, comp, hint, fallbackCity, onToggle, onRemove }) {
   return (
     <Card style={s.compCard}>
       <View style={s.compHead}>
@@ -29,6 +30,14 @@ function CompCard({ t, comp, fallbackCity, onToggle, onRemove }) {
         <FlagChip label={t("soldClosed")} on={comp.closed} onToggle={() => onToggle("closed")} />
         <FlagChip label={t("renovated")} on={comp.renovated} onToggle={() => onToggle("renovated")} />
       </View>
+      {/* Auto-evidence, never auto-testimony: remodel permits found in the
+          public record before the sale render as a hint — flipping the flag
+          stays the user's call. */}
+      {hint ? (
+        <Text style={[type.spec, s.provenance, { color: colors.green }]}>
+          🔨 {hint.count} {t(hint.count === 1 ? "remodelPermitOne" : "remodelPermitMany")} · {hint.year}
+        </Text>
+      ) : null}
       {/* Flag provenance: deed-verified reads as evidence (green), a removed
           listing reads as a suggestion (amber) until the user confirms. */}
       {comp.closed && comp.closed_source === "public_record" ? (
@@ -57,8 +66,24 @@ export default function CompSetScreen({ t, run, onChange }) {
   const [sqft, setSqft] = useState("");
   const [subjectSqft, setSubjectSqft] = useState(subject.square_feet ? String(subject.square_feet) : "");
   const [afterSqft, setAfterSqft] = useState(subject.total_sf_after ? String(subject.total_sf_after) : "");
+  const [hints, setHints] = useState({}); // address -> {count, year}; display-only, never in `run`
 
   const setComps = (next) => onChange({ ...run, comps: next });
+
+  // Quiet background check per comp with an address (feed-sourced or hand-
+  // entered): remodel permits before the sale become the Renovated hint.
+  // Module-level cache dedupes; failures and uncovered cities resolve null
+  // and render nothing.
+  useEffect(() => {
+    let live = true;
+    comps.forEach((c) => {
+      if (!c.address) return;
+      remodelHint(c.address, run.address?.city, c.sold_date ?? c.date).then((h) => {
+        if (live && h) setHints((prev) => (prev[c.address] ? prev : { ...prev, [c.address]: h }));
+      });
+    });
+    return () => { live = false; };
+  }, [comps, run.address?.city]);
 
   const addComp = () => {
     const p = numOrNull(price);
@@ -146,6 +171,7 @@ export default function CompSetScreen({ t, run, onChange }) {
           key={`${c.id}-${i}`}
           t={t}
           comp={c}
+          hint={hints[c.address]}
           fallbackCity={run.address?.city}
           onToggle={(flag) => setComps(comps.map((x, j) => (j === i ? { ...x, [flag]: !x[flag] } : x)))}
           onRemove={() => setComps(comps.filter((_, j) => j !== i))}
