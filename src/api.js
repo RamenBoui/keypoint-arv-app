@@ -86,6 +86,26 @@ export function arvAgent({ subject, comps, deal, ceiling_pct }) {
   return call("arv-agent", body);
 }
 
+// File the run to Records (AV-16, save-arv-record 2026-08-18): the curated
+// comps ride WHOLE — flags and provenance are the testimony — beside the
+// band the engine returned. One row per property, re-filing refreshes it;
+// the record lands on the property's project timeline (kind arv_report).
+export function saveArvRecord(run, result) {
+  return call("save-arv-record", {
+    address: run.addressText,
+    subject: run.subject,
+    comps: run.comps,
+    deal: run.deal ?? null,
+    ceiling_pct: typeof run.ceiling_pct === "number" && run.ceiling_pct > 0 ? run.ceiling_pct : null,
+    posture: result?.posture ?? null,
+    band: result?.band ?? null,
+    breakeven: result?.breakeven ?? null,
+    tiers: result?.tiers ?? null,
+    footer: result?.footer ?? null,
+    saved_by: "arv-app",
+  });
+}
+
 // Live public-record permits for one address. Never cached server-side;
 // { covered: false } is an honest answer, not an error.
 export function permitHistory(address, city) {

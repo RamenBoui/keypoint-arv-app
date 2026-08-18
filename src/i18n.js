@@ -111,6 +111,9 @@ export const STRINGS = {
     shareAsPdf: "Share as PDF",
     copyShareLink: "Copy share link",
     linkCopied: "✓ Link copied — flags and all",
+    fileToRecords: "File to Records",
+    filedToRecords: "✓ Filed — on the property's timeline",
+    fileFailed: "Filing failed — try again",
     adjustComps: "← Adjust comps",
     newAddress: "New address",
 
@@ -309,6 +312,9 @@ export const STRINGS = {
     shareAsPdf: "Compartir como PDF",
     copyShareLink: "Copiar enlace",
     linkCopied: "✓ Enlace copiado — con las marcas incluidas",
+    fileToRecords: "Archivar en Registros",
+    filedToRecords: "✓ Archivado — en la línea de tiempo de la propiedad",
+    fileFailed: "No se pudo archivar — intente de nuevo",
     adjustComps: "← Ajustar comparables",
     newAddress: "Nueva dirección",
 
@@ -508,6 +514,9 @@ export const STRINGS = {
     shareAsPdf: "分享 PDF",
     copyShareLink: "复制分享链接",
     linkCopied: "✓ 链接已复制 — 含全部标记",
+    fileToRecords: "存入档案",
+    filedToRecords: "✓ 已存档 — 见该物业的时间线",
+    fileFailed: "存档失败 — 请重试",
     adjustComps: "← 调整可比",
     newAddress: "新地址",
 

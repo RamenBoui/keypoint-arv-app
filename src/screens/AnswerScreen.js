@@ -9,6 +9,7 @@ import { Card, Divider, Field, GhostButton, GroupLabel, Pill, PrimaryButton } fr
 import ContextTabs from "../components/ContextTabs";
 import { shareReport } from "../report";
 import { copyShareUrl, shareUrl } from "../share";
+import { saveArvRecord } from "../api";
 import { colors, type } from "../theme";
 
 const CONF_TONE = { high: "green", medium: "amber", low: "red" };
@@ -202,6 +203,7 @@ function DealForm({ t, initial, initialCeiling, subject, band, onRun, busy }) {
 export default function AnswerScreen({ t, lang, run, result, busy, onRunDeal, onBack, onNewAddress }) {
   const [editingDeal, setEditingDeal] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [filing, setFiling] = useState("idle"); // idle | busy | filed | failed
   const [showParams, setShowParams] = useState(false);
   const [showTiers, setShowTiers] = useState(false);
   const { band, breakeven, tiers, comp_set, basis_note, posture } = result;
@@ -294,6 +296,20 @@ export default function AnswerScreen({ t, lang, run, result, busy, onRunDeal, on
           />
         </>
       )}
+      <View style={{ height: 8 }} />
+      {/* AV-16 (2026-08-18): file the run to Records — the curated comps
+          ride whole (flags = testimony) beside the engine's band; re-filing
+          the same address refreshes the one record on its project timeline. */}
+      <GhostButton
+        title={filing === "filed" ? t("filedToRecords") : filing === "failed" ? t("fileFailed") : t("fileToRecords")}
+        onPress={async () => {
+          if (filing === "busy") return;
+          setFiling("busy");
+          const res = await saveArvRecord(run, result).catch(() => ({ ok: false }));
+          setFiling(res?.ok ? "filed" : "failed");
+          if (!res?.ok) setTimeout(() => setFiling("idle"), 3000);
+        }}
+      />
       <View style={{ height: 8 }} />
       <View style={s.navRow}>
         <View style={{ flex: 1 }}><GhostButton title={t("adjustComps")} onPress={onBack} /></View>
