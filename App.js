@@ -3,19 +3,62 @@
 // Contract: BOBAI/trunk/ARV_APP_CONTRACT.md. Hand-rolled screen stack
 // (address → comps → answer), same pattern as the Field app.
 import { useEffect, useRef, useState } from "react";
-import { Platform, Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
+import { Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
+import { styled, TamaguiProvider, Text as TText, View as TView } from "tamagui";
+import tamaguiConfig from "./tamagui.config";
 import { arvAgent } from "./src/api";
 import { LANGS, makeT } from "./src/i18n";
 import { takeSharedRun } from "./src/share";
 import { DEMO_RUNS, takePreviewScreen } from "./src/preview";
 import { getLang, load, onExternalLangChange, rememberRun, setLang } from "./src/store";
 import { todayLocalISO } from "./src/util";
-import { colors, ensureFontsWeb, radius, type } from "./src/theme";
+import { colors, ensureFontsWeb, fonts, radius, type } from "./src/theme";
 import AddressScreen from "./src/screens/AddressScreen";
 import CompSetScreen from "./src/screens/CompSetScreen";
 import CompareScreen from "./src/screens/CompareScreen";
 import LiveBandBar from "./src/components/LiveBandBar";
 import AnswerScreen from "./src/screens/AnswerScreen";
+
+// Tamagui spike (TAMAGUI_EXTRACTION.md §7-A): the language chip is the one
+// converted element — styled() + theme tokens + a size variant. `$card`,
+// `$ink`, `$borderStrong`, `$onInk`, `$textMuted` are the exact Keypoint
+// hexes carried as theme extras in tamagui.config.ts, so the chip renders
+// pixel-identical to the StyleSheet version it replaces.
+const LangChip = styled(TView, {
+  name: "LangChip",
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "center",
+  borderRadius: radius.pill,
+  borderWidth: 1,
+  borderColor: "$borderStrong",
+  backgroundColor: "$card",
+  cursor: "pointer",
+  variants: {
+    active: {
+      true: { backgroundColor: "$ink", borderColor: "$ink", pressStyle: { backgroundColor: "$inkPress" } },
+    },
+    size: {
+      sm: { paddingHorizontal: 9, paddingVertical: 4 },
+      md: { paddingHorizontal: 14, paddingVertical: 8 },
+    },
+  },
+  defaultVariants: { size: "sm" },
+});
+
+const LangChipText = styled(TText, {
+  name: "LangChipText",
+  // type.brandLockup, minus the hardcoded color — the theme owns color now.
+  fontFamily: fonts.mono,
+  fontWeight: "700",
+  fontSize: 10,
+  letterSpacing: 1.8,
+  textTransform: "uppercase",
+  color: "$textMuted",
+  variants: {
+    active: { true: { color: "$onInk" } },
+  },
+});
 
 export default function App() {
   const [ready, setReady] = useState(false);
@@ -134,6 +177,7 @@ export default function App() {
   if (!ready) return <View style={s.boot} />;
 
   return (
+    <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
     <SafeAreaView style={s.app}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.bg} />
       <View style={s.header}>
@@ -148,9 +192,9 @@ export default function App() {
         <View style={s.headerRight}>
           <View style={s.langRow}>
             {LANGS.map((l) => (
-              <Pressable key={l} onPress={() => { setLangState(l); setLang(l); }} hitSlop={6} style={[s.langChip, lang === l && s.langChipOn]}>
-                <Text style={[s.langOpt, lang === l && s.langOptOn]}>{l === "zh" ? "中文" : l.toUpperCase()}</Text>
-              </Pressable>
+              <LangChip key={l} active={lang === l} onPress={() => { setLangState(l); setLang(l); }} hitSlop={6}>
+                <LangChipText active={lang === l}>{l === "zh" ? "中文" : l.toUpperCase()}</LangChipText>
+              </LangChip>
             ))}
           </View>
           <Text style={type.date}>{todayLocalISO()}</Text>
@@ -205,6 +249,7 @@ export default function App() {
         />
       )}
     </SafeAreaView>
+    </TamaguiProvider>
   );
 }
 
@@ -230,17 +275,6 @@ const s = StyleSheet.create({
   },
   headerRight: { flexDirection: "row", alignItems: "center", gap: 12 },
   langRow: { flexDirection: "row", gap: 5 },
-  langChip: {
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    backgroundColor: colors.card,
-  },
-  langChipOn: { backgroundColor: colors.ink, borderColor: colors.ink },
-  langOpt: { ...type.brandLockup, color: colors.textMuted },
-  langOptOn: { color: colors.onInk },
   body: { flex: 1 },
   bodyContent: { maxWidth: 560, width: "100%", alignSelf: "center", paddingBottom: 40 },
   error: {
